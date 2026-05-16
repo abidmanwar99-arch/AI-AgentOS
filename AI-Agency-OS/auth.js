@@ -29,8 +29,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // In production, inject these via your build system (Vite, Next.js env vars).
 // NEVER commit real keys to git — use .env files.
 
-const SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
-const SUPABASE_ANON = 'YOUR_ANON_PUBLIC_KEY';
+const SUPABASE_URL  = 'sb_secret_YfTHn6QLgoHPyTVDtwQ0dg_m9EEvSOx';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzZ3pnamlkYml1d2dwcGp5dmRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDkxMzEsImV4cCI6MjA5NDQyNTEzMX0.5JvMPJjl5rc8eFCU3FTzMDrtB6B4sY923U19BJN6Dgo';
 
 // AES-256 encryption key — MUST be exactly 32 bytes (256 bits).
 // Generate with: crypto.getRandomValues(new Uint8Array(32))
