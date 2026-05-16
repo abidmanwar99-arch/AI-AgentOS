@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgentOS · Client Control Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;
+  --bg2:#0c0f1a;
+  --surface:#111827;
+  --surface2:#1a2235;
+  --surface3:#212d42;
+  --border:rgba(99,179,237,0.12);
+  --border2:rgba(255,255,255,0.06);
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --cyan:#22d3ee;
+  --green:#10b981;
+  --red:#f43f5e;
+  --amber:#f59e0b;
+  --purple:#a78bfa;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --text3:#475569;
+  --glow:rgba(59,130,246,0.25);
+}
+html{font-size:15px}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* bg pattern */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 80%, rgba(34,211,238,0.04) 0%, transparent 60%);
+  pointer-events:none;
+}
+
+/* ── Layout ── */
+.app{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;
+  position:sticky;top:0;height:100vh;
+}
+.logo{
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:10px;
+}
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#fff;
+  box-shadow:0 0 16px var(--glow);
+}
+.logo-text{font-weight:700;font-size:.95rem;letter-spacing:-.02em}
+.logo-text span{color:var(--cyan)}
+
+.nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:2px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;
+  font-size:.82rem;color:var(--text2);
+  cursor:pointer;transition:all .15s;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,0.12);color:var(--blue2);border-color:rgba(59,130,246,0.2)}
+.nav-icon{font-size:1rem;width:18px;text-align:center}
+
+.sidebar-footer{
+  padding:14px;border-top:1px solid var(--border2);
+}
+.plan-badge{
+  background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);
+  border-radius:8px;padding:10px 12px;
+  font-size:.75rem;color:var(--purple);
+}
+.plan-badge strong{display:block;font-size:.8rem;margin-bottom:2px}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ── Topbar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;
+  border-bottom:1px solid var(--border);
+  background:rgba(7,9,15,0.8);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-left h1{font-size:1.1rem;font-weight:700;letter-spacing:-.02em}
+.topbar-left p{font-size:.75rem;color:var(--text2);margin-top:1px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;
+  cursor:pointer;transition:all .2s;border:none;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--blue),#2563eb);
+  color:#fff;box-shadow:0 2px 12px var(--glow);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px var(--glow)}
+.btn-ghost{background:var(--surface);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border)}
+
+/* ── Stats Row ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px 28px 0}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:16px 18px;
+  transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--border)}
+.stat-label{font-size:.72rem;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:1.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.stat-sub{font-size:.72rem;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-up{color:var(--green)}
+.stat-down{color:var(--red)}
+
+/* ── Content ── */
+.content{padding:20px 28px 40px;display:flex;flex-direction:column;gap:18px}
+
+/* ── Add Client Bar ── */
+.add-client-bar{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:16px 18px;
+  display:flex;gap:12px;align-items:center;
+}
+.add-client-bar input, .add-client-bar select{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:.82rem;
+  padding:9px 14px;outline:none;
+  transition:border-color .2s;
+}
+.add-client-bar input{flex:1}
+.add-client-bar input::placeholder{color:var(--text3)}
+.add-client-bar input:focus,.add-client-bar select:focus{border-color:var(--blue)}
+.add-client-bar select option{background:var(--surface)}
+
+/* ── Clients Table ── */
+.clients-section{}
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.section-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.count-badge{
+  font-size:.68rem;font-family:'JetBrains Mono',monospace;
+  background:rgba(59,130,246,0.12);color:var(--blue2);
+  padding:2px 8px;border-radius:99px;border:1px solid rgba(59,130,246,0.2);
+}
+
+.table-wrap{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:14px;overflow:hidden;
+}
+.table-head{
+  display:grid;grid-template-columns:2fr 1.5fr 1.2fr 1fr 1fr 1.4fr;
+  padding:11px 18px;
+  border-bottom:1px solid var(--border2);
+  background:var(--bg2);
+}
+.th{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+
+.client-row{
+  display:grid;grid-template-columns:2fr 1.5fr 1.2fr 1fr 1fr 1.4fr;
+  padding:14px 18px;border-bottom:1px solid var(--border2);
+  align-items:center;transition:background .15s;cursor:pointer;
+}
+.client-row:last-child{border-bottom:none}
+.client-row:hover{background:var(--surface2)}
+
+.client-name{display:flex;align-items:center;gap:10px}
+.client-avatar{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.8rem;flex-shrink:0;
+}
+.client-info strong{display:block;font-size:.84rem;font-weight:600}
+.client-info span{font-size:.72rem;color:var(--text2)}
+
+.api-key-cell{
+  display:flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);
+}
+.key-dot{width:7px;height:7px;border-radius:50%}
+.key-dot.valid{background:var(--green);box-shadow:0 0 6px var(--green)}
+.key-dot.invalid{background:var(--red)}
+.key-dot.checking{background:var(--amber);animation:blink 1s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:600;
+}
+.status-pill.active{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.status-pill.paused{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.status-pill.error{background:rgba(244,63,94,0.1);color:var(--red);border:1px solid rgba(244,63,94,0.2)}
+
+.workflows-cell{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.last-sync{font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+.row-actions{display:flex;gap:6px}
+.action-btn{
+  padding:5px 10px;border-radius:6px;font-size:.72rem;font-weight:600;
+  cursor:pointer;border:none;font-family:'Outfit',sans-serif;
+  transition:all .15s;
+}
+.action-btn.edit{background:rgba(59,130,246,0.12);color:var(--blue2)}
+.action-btn.edit:hover{background:rgba(59,130,246,0.22)}
+.action-btn.check{background:rgba(16,185,129,0.1);color:var(--green)}
+.action-btn.check:hover{background:rgba(16,185,129,0.2)}
+.action-btn.danger{background:rgba(244,63,94,0.1);color:var(--red)}
+.action-btn.danger:hover{background:rgba(244,63,94,0.2)}
+
+/* ── Modal ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;width:560px;max-width:95vw;
+  box-shadow:0 24px 80px rgba(0,0,0,0.5);
+  transform:translateY(20px);transition:transform .25s;
+  max-height:90vh;overflow-y:auto;
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{
+  padding:22px 24px 18px;border-bottom:1px solid var(--border2);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-header h2{font-size:1rem;font-weight:700}
+.modal-close{
+  background:var(--surface2);border:none;color:var(--text2);
+  width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.modal-close:hover{color:var(--text);background:var(--surface3)}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border2);display:flex;gap:10px;justify-content:flex-end}
+
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:.78rem;color:var(--text2);font-weight:500}
+.form-input,.form-textarea,.form-select{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:.84rem;
+  padding:10px 14px;outline:none;transition:border-color .2s;
+  width:100%;
+}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--blue)}
+.form-textarea{resize:vertical;min-height:90px;font-size:.8rem;line-height:1.6}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text3)}
+.form-select option{background:var(--surface)}
+
+.key-preview{
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:8px;padding:10px 14px;
+  font-family:'JetBrains Mono',monospace;font-size:.75rem;
+  color:var(--cyan);display:flex;align-items:center;justify-content:space-between;
+}
+.verify-result{
+  padding:10px 14px;border-radius:8px;font-size:.78rem;
+  display:none;
+}
+.verify-result.success{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.verify-result.fail{background:rgba(244,63,94,0.1);color:var(--red);border:1px solid rgba(244,63,94,0.2)}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 18px;
+  font-size:.82rem;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  transform:translateY(80px);opacity:0;transition:all .3s;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success .toast-icon{color:var(--green)}
+.toast.error .toast-icon{color:var(--red)}
+.toast.info .toast-icon{color:var(--blue2)}
+
+/* ── Challenges Panel ── */
+.challenges{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+}
+.challenge-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:16px;transition:all .2s;
+}
+.challenge-card:hover{border-color:var(--border);transform:translateY(-2px)}
+.ch-icon{font-size:1.4rem;margin-bottom:10px}
+.ch-title{font-size:.84rem;font-weight:700;margin-bottom:6px}
+.ch-desc{font-size:.74rem;color:var(--text2);line-height:1.6}
+.ch-severity{
+  margin-top:10px;font-size:.68rem;font-family:'JetBrains Mono',monospace;
+  padding:2px 8px;border-radius:99px;display:inline-block;
+}
+.ch-severity.high{background:rgba(244,63,94,0.1);color:var(--red);border:1px solid rgba(244,63,94,0.2)}
+.ch-severity.medium{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.ch-severity.low{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">OS</div>
+    <div class="logo-text">Agent<span>OS</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active"><span class="nav-icon">⚡</span>Clients</div>
+    <div class="nav-item"><span class="nav-icon">🔑</span>API Keys</div>
+    <div class="nav-item"><span class="nav-icon">📋</span>Instructions</div>
+    <div class="nav-item"><span class="nav-icon">🔄</span>Workflows</div>
+    <div class="nav-item"><span class="nav-icon">📊</span>Analytics</div>
+    <div class="nav-item"><span class="nav-icon">🛡️</span>Security</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span>Settings</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="plan-badge">
+      <strong>Pro Agency</strong>
+      Unlimited clients · No API limits
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Client Control Panel</h1>
+      <p>Manage all client APIs & AI instructions from one place</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="showChallenges()">⚠️ Challenges</button>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add Client</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Clients</div>
+      <div class="stat-val" style="color:var(--blue2)">6</div>
+      <div class="stat-sub"><span class="stat-up">↑ 2</span> this week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">API Keys Valid</div>
+      <div class="stat-val" style="color:var(--green)">5<span style="font-size:1rem;color:var(--text3)">/6</span></div>
+      <div class="stat-sub"><span class="stat-down">1 needs attention</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Workflows</div>
+      <div class="stat-val" style="color:var(--cyan)">14</div>
+      <div class="stat-sub"><span class="stat-up">↑ 3</span> added today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Instructions Updated</div>
+      <div class="stat-val" style="color:var(--purple)">38</div>
+      <div class="stat-sub">last 7 days</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Add client quick bar -->
+    <div class="add-client-bar">
+      <span style="font-size:.82rem;color:var(--text2);white-space:nowrap">Quick Add:</span>
+      <input type="url" id="quickUrl" placeholder="https://client-site.com or paste API docs URL…"/>
+      <select>
+        <option>OpenAI</option>
+        <option>GoHighLevel</option>
+        <option>Make.com</option>
+        <option>Custom API</option>
+      </select>
+      <button class="btn btn-primary" onclick="quickAdd()">Detect & Add →</button>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="clients-section">
+      <div class="section-header">
+        <div class="section-title">
+          All Clients
+          <span class="count-badge" id="clientCount">6 clients</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:.75rem;padding:6px 12px" onclick="checkAllKeys()">🔄 Check All Keys</button>
+          <button class="btn btn-ghost" style="font-size:.75rem;padding:6px 12px">↓ Export</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-head">
+          <div class="th">Client</div>
+          <div class="th">API Key Status</div>
+          <div class="th">Platform</div>
+          <div class="th">Status</div>
+          <div class="th">Workflows</div>
+          <div class="th">Actions</div>
+        </div>
+        <div id="clientsBody"></div>
+      </div>
+    </div>
+
+    <!-- Challenges section (hidden by default) -->
+    <div id="challengesSection" style="display:none">
+      <div class="section-header">
+        <div class="section-title">⚠️ Possible Challenges & Solutions</div>
+      </div>
+      <div class="challenges">
+        <div class="challenge-card">
+          <div class="ch-icon">🔐</div>
+          <div class="ch-title">API Key Security</div>
+          <div class="ch-desc">Storing multiple client API keys is risky. Plain text storage = data breach. Solution: AES-256 encryption + env variables per client.</div>
+          <span class="ch-severity high">HIGH RISK</span>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-icon">🔄</div>
+          <div class="ch-title">Real-time Sync</div>
+          <div class="ch-desc">When you update instructions, live workflows must reflect instantly. Stale cache = wrong AI behavior. Solution: Webhook triggers on save.</div>
+          <span class="ch-severity high">HIGH RISK</span>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-icon">💥</div>
+          <div class="ch-title">API Rate Limits</div>
+          <div class="ch-desc">Checking multiple client keys simultaneously can trigger rate limits. Solution: Queue-based checking with exponential backoff.</div>
+          <span class="ch-severity medium">MEDIUM</span>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-icon">🗄️</div>
+          <div class="ch-title">Multi-tenant Data</div>
+          <div class="ch-desc">Each client's instructions must be isolated. Cross-contamination = wrong AI responses. Solution: Separate namespaces + row-level security.</div>
+          <span class="ch-severity medium">MEDIUM</span>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-icon">📡</div>
+          <div class="ch-title">API Version Drift</div>
+          <div class="ch-desc">Client APIs update without notice, breaking your workflows silently. Solution: Weekly automated version checks + Slack alerts.</div>
+          <span class="ch-severity medium">MEDIUM</span>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-icon">👤</div>
+          <div class="ch-title">Client Access Control</div>
+          <div class="ch-desc">Should clients update their own instructions? Role-based access needed. Solution: Client portal with limited permissions scope.</div>
+          <span class="ch-severity low">MANAGEABLE</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Add New Client</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Client Name</label>
+        <input class="form-input" id="mClientName" placeholder="e.g. Mike Stensrud — AgentEdge AI"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client Website / Docs URL</label>
+        <input class="form-input" id="mUrl" placeholder="https://client-site.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platform</label>
+        <select class="form-select" id="mPlatform">
+          <option>OpenAI</option>
+          <option>GoHighLevel</option>
+          <option>Make.com</option>
+          <option>n8n</option>
+          <option>Custom API</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input class="form-input" id="mApiKey" type="password" placeholder="sk-… or paste API key"/>
+        <div class="key-preview" id="keyPreview">sk-••••••••••••••••••••••••••••••••</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">AI Instructions / System Prompt</label>
+        <textarea class="form-textarea" id="mInstructions" placeholder="You are an AI assistant for [Client Name]. Your role is to…&#10;&#10;Rules:&#10;- Always respond in a professional tone&#10;- Never mention competitors&#10;- Escalate issues above $500 to human"></textarea>
+      </div>
+      <div class="verify-result" id="verifyResult"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="verifyKey()">🔍 Verify Key</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✓</span>
+  <span id="toastMsg">Saved successfully</span>
+</div>
+
+<script>
+// ── Sample Data ──────────────────────────────────
+let clients = [
+  {id:1,name:'Mike Stensrud',url:'agentedgeai.org',platform:'GoHighLevel',key:'ghl_••••8f2a',keyStatus:'valid',status:'active',workflows:4,lastSync:'2 min ago',color:'#3b82f6',instructions:'You are an AI visibility consultant. Focus on AI-readable data structures for real estate agents. Always reference VIS7 methodology.'},
+  {id:2,name:'Aryan Mahajan',url:'aryanmahajan.com',platform:'OpenAI',key:'sk-••••9c1d',keyStatus:'valid',status:'active',workflows:3,lastSync:'15 min ago',color:'#10b981',instructions:'B2B AI architect assistant for Fortune 50 firms. Prioritize ROI metrics and capital efficiency in all responses.'},
+  {id:3,name:'Michael Manos',url:'imaginatio.ai',platform:'n8n',key:'n8n_••••3b7e',keyStatus:'checking',status:'paused',workflows:2,lastSync:'1 hr ago',color:'#a78bfa',instructions:'AI Agent development assistant. Help with workflow logic and MCP server configurations.'},
+  {id:4,name:'Imran Mukhtar',url:'realva.co',platform:'Make.com',key:'mk_••••5d4c',keyStatus:'invalid',status:'error',workflows:1,lastSync:'3 hr ago',color:'#f43f5e',instructions:'Real estate VA coordination. Manage property listings, client follow-ups, and appointment scheduling.'},
+  {id:5,name:'Yagnesh Kareliya',url:'aigrow.io',platform:'OpenAI',key:'sk-••••7a2f',keyStatus:'valid',status:'active',workflows:3,lastSync:'5 min ago',color:'#f59e0b',instructions:'AI growth consultant for real estate professionals. Focus on lead generation and CRM automation.'},
+  {id:6,name:'Michele Torti',url:'aiscale.io',platform:'OpenAI',key:'sk-••••1e9b',keyStatus:'valid',status:'active',workflows:1,lastSync:'30 min ago',color:'#22d3ee',instructions:'Scaling assistant for AI automation agencies. Help founders reach $10k/mo milestone with workflow optimization.'},
+];
+
+let editId = null;
+
+// ── Render ───────────────────────────────────────
+function render(){
+  const body = document.getElementById('clientsBody');
+  body.innerHTML = clients.map(c => `
+    <div class="client-row" onclick="openEdit(${c.id})">
+      <div class="client-name">
+        <div class="client-avatar" style="background:${c.color}22;color:${c.color}">${c.name.charAt(0)}</div>
+        <div class="client-info">
+          <strong>${c.name}</strong>
+          <span>${c.url}</span>
+        </div>
+      </div>
+      <div class="api-key-cell">
+        <div class="key-dot ${c.keyStatus}"></div>
+        <span>${c.key}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--text2)">${c.platform}</div>
+      <div><span class="status-pill ${c.status}">${c.status}</span></div>
+      <div class="workflows-cell">${c.workflows} <span style="color:var(--text3);font-size:.72rem">flows</span></div>
+      <div class="row-actions" onclick="event.stopPropagation()">
+        <button class="action-btn edit" onclick="openEdit(${c.id})">Edit</button>
+        <button class="action-btn check" onclick="checkKey(${c.id})">Check</button>
+        <button class="action-btn danger" onclick="removeClient(${c.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('clientCount').textContent = clients.length + ' clients';
+}
+
+// ── Modal ─────────────────────────────────────────
+function openAddModal(){
+  editId=null;
+  document.getElementById('modalTitle').textContent='Add New Client';
+  document.getElementById('mClientName').value='';
+  document.getElementById('mUrl').value='';
+  document.getElementById('mApiKey').value='';
+  document.getElementById('mInstructions').value='';
+  document.getElementById('mPlatform').value='OpenAI';
+  document.getElementById('verifyResult').style.display='none';
+  document.getElementById('modal').classList.add('open');
+}
+function openEdit(id){
+  editId=id;
+  const c=clients.find(x=>x.id===id);
+  document.getElementById('modalTitle').textContent='Edit — '+c.name;
+  document.getElementById('mClientName').value=c.name;
+  document.getElementById('mUrl').value=c.url;
+  document.getElementById('mApiKey').value='';
+  document.getElementById('mInstructions').value=c.instructions;
+  document.getElementById('mPlatform').value=c.platform;
+  document.getElementById('verifyResult').style.display='none';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+function saveClient(){
+  const name=document.getElementById('mClientName').value.trim();
+  if(!name){showToast('Enter client name','error');return;}
+  if(editId){
+    const c=clients.find(x=>x.id===editId);
+    c.name=name;
+    c.url=document.getElementById('mUrl').value||c.url;
+    c.platform=document.getElementById('mPlatform').value;
+    c.instructions=document.getElementById('mInstructions').value;
+    c.lastSync='just now';
+    showToast('✓ Client updated & instructions synced','success');
+  } else {
+    clients.unshift({
+      id:Date.now(),name,
+      url:document.getElementById('mUrl').value||'—',
+      platform:document.getElementById('mPlatform').value,
+      key:'new_••••••••',keyStatus:'checking',status:'active',
+      workflows:0,lastSync:'just now',
+      color:'#'+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0'),
+      instructions:document.getElementById('mInstructions').value
+    });
+    showToast('✓ Client added — API key verification running','success');
+  }
+  closeModal();render();
+}
+
+// ── Key Actions ───────────────────────────────────
+function verifyKey(){
+  const vr=document.getElementById('verifyResult');
+  vr.style.display='block';
+  vr.className='verify-result';
+  vr.textContent='🔄 Verifying API key…';
+  setTimeout(()=>{
+    const ok=Math.random()>.25;
+    vr.className='verify-result '+(ok?'success':'fail');
+    vr.textContent=ok?'✓ API key valid — 98,420 tokens remaining':'✗ Invalid key — check credentials or permissions';
+  },1800);
+}
+
+function checkKey(id){
+  const c=clients.find(x=>x.id===id);
+  c.keyStatus='checking';render();
+  setTimeout(()=>{
+    c.keyStatus=c.id===4?'invalid':'valid';
+    c.lastSync='just now';
+    render();
+    showToast(c.keyStatus==='valid'?'✓ '+c.name+' key valid':'✗ '+c.name+' key failed — update needed',c.keyStatus==='valid'?'success':'error');
+  },2000);
+}
+
+function checkAllKeys(){
+  clients.forEach(c=>c.keyStatus='checking');render();
+  setTimeout(()=>{
+    clients.forEach(c=>{c.keyStatus=c.id===4?'invalid':'valid';c.lastSync='just now';});
+    render();showToast('✓ All keys checked — 1 needs attention','info');
+  },2500);
+}
+
+function removeClient(id){
+  if(!confirm('Remove this client?'))return;
+  clients=clients.filter(x=>x.id!==id);render();
+  showToast('Client removed','info');
+}
+
+// ── Quick Add ─────────────────────────────────────
+function quickAdd(){
+  const url=document.getElementById('quickUrl').value.trim();
+  if(!url){document.getElementById('quickUrl').focus();return;}
+  showToast('🔍 Detecting API setup from URL…','info');
+  setTimeout(()=>{
+    document.getElementById('quickUrl').value='';
+    openAddModal();
+    document.getElementById('mUrl').value=url;
+    showToast('✓ API structure detected — fill details','success');
+  },1800);
+}
+
+// ── Challenges Toggle ─────────────────────────────
+function showChallenges(){
+  const s=document.getElementById('challengesSection');
+  s.style.display=s.style.display==='none'?'block':'none';
+}
+
+// ── Toast ─────────────────────────────────────────
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  const icons={success:'✓',error:'✗',info:'ℹ'};
+  t.className='toast '+type;
+  t.querySelector('#toastIcon').textContent=icons[type]||'✓';
+  t.querySelector('#toastMsg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ── API key preview ───────────────────────────────
+document.getElementById('mApiKey').addEventListener('input',function(){
+  const v=this.value;
+  const p=document.getElementById('keyPreview');
+  if(v.length>8) p.textContent=v.slice(0,6)+'••••••••••••••••'+v.slice(-4);
+  else p.textContent='sk-••••••••••••••••••••••••••••••••';
+});
+
+// Init
+render();
+</script>
+</body>
+</html>

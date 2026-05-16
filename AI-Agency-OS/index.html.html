@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgentOS · Secure Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;
+  --bg2:#0c0f1a;
+  --surface:#111827;
+  --surface2:#1a2235;
+  --surface3:#212d42;
+  --border:rgba(99,179,237,0.12);
+  --border2:rgba(255,255,255,0.06);
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --cyan:#22d3ee;
+  --green:#10b981;
+  --red:#f43f5e;
+  --amber:#f59e0b;
+  --purple:#a78bfa;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --text3:#475569;
+  --glow:rgba(59,130,246,0.25);
+}
+html{font-size:15px}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(59,130,246,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 80%, rgba(34,211,238,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(167,139,250,0.03) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+/* ══════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════ */
+#loginScreen{
+  position:fixed;inset:0;z-index:1000;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+  transition:opacity .4s ease, transform .4s ease;
+}
+#loginScreen.hide{opacity:0;transform:scale(1.04);pointer-events:none}
+
+.login-wrap{
+  width:420px;max-width:95vw;
+  animation:loginIn .6s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes loginIn{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.login-logo{
+  display:flex;align-items:center;gap:12px;
+  justify-content:center;margin-bottom:36px;
+}
+.login-logo-mark{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#fff;
+  box-shadow:0 0 28px var(--glow);
+}
+.login-logo-text{
+  font-size:1.5rem;font-weight:800;letter-spacing:-.03em;
+}
+.login-logo-text span{color:var(--cyan)}
+
+.login-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:32px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03);
+}
+.login-card h2{
+  font-size:1.15rem;font-weight:700;
+  margin-bottom:6px;text-align:center;
+}
+.login-card p{
+  font-size:.8rem;color:var(--text2);text-align:center;
+  margin-bottom:28px;line-height:1.5;
+}
+
+.form-group{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.form-label{
+  font-size:.76rem;color:var(--text2);font-weight:600;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.form-label a{color:var(--blue2);cursor:pointer;font-size:.72rem}
+
+.input-wrap{position:relative}
+.form-input{
+  width:100%;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:10px;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:.88rem;
+  padding:12px 14px 12px 42px;
+  outline:none;transition:border-color .2s, box-shadow .2s;
+}
+.form-input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(59,130,246,.12);
+}
+.form-input::placeholder{color:var(--text3)}
+.input-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:.95rem;pointer-events:none;
+}
+.input-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-size:.85rem;cursor:pointer;color:var(--text3);
+  transition:color .15s;padding:4px;
+}
+.input-eye:hover{color:var(--text2)}
+
+.login-error{
+  background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);
+  border-radius:8px;padding:10px 14px;
+  font-size:.78rem;color:var(--red);
+  display:none;align-items:center;gap:8px;margin-bottom:16px;
+}
+.login-error.show{display:flex}
+
+.btn-login{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--blue),#2563eb);
+  border:none;border-radius:10px;
+  color:#fff;font-family:'Outfit',sans-serif;
+  font-size:.9rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 20px var(--glow);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:.01em;
+}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(59,130,246,.45)}
+.btn-login:active{transform:translateY(0)}
+.btn-login.loading{opacity:.75;pointer-events:none}
+
+.login-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;
+}
+.login-divider::before,.login-divider::after{
+  content:'';flex:1;height:1px;background:var(--border2);
+}
+.login-divider span{font-size:.72rem;color:var(--text3)}
+
+.demo-creds{
+  background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.15);
+  border-radius:10px;padding:14px 16px;
+  font-size:.76rem;
+}
+.demo-creds p{color:var(--text2);margin-bottom:8px}
+.demo-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:4px;
+}
+.demo-row:last-child{margin-bottom:0}
+.demo-row span:first-child{color:var(--text3)}
+.demo-row code{
+  font-family:'JetBrains Mono',monospace;font-size:.75rem;
+  color:var(--cyan);background:rgba(34,211,238,.08);
+  padding:2px 8px;border-radius:5px;cursor:pointer;
+}
+.demo-row code:hover{background:rgba(34,211,238,.15)}
+
+.login-footer{
+  margin-top:20px;text-align:center;
+  font-size:.72rem;color:var(--text3);line-height:1.6;
+}
+.login-footer span{color:var(--green)}
+
+/* attempts indicator */
+.attempts-bar{
+  display:flex;gap:4px;margin-top:6px;justify-content:center;
+}
+.attempt-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--surface3);transition:background .3s;
+}
+.attempt-dot.used{background:var(--red)}
+
+/* ══════════════════════════════
+   DASHBOARD
+══════════════════════════════ */
+#dashboardScreen{
+  display:none;position:relative;z-index:1;
+  animation:dashIn .5s ease forwards;
+}
+@keyframes dashIn{from{opacity:0}to{opacity:1}}
+
+.app{display:flex;min-height:100vh}
+
+/* Sidebar */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+}
+.logo{
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:10px;
+}
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#fff;
+  box-shadow:0 0 14px var(--glow);
+}
+.logo-text{font-weight:700;font-size:.95rem;letter-spacing:-.02em}
+.logo-text span{color:var(--cyan)}
+
+.nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;
+  font-size:.82rem;color:var(--text2);
+  cursor:pointer;transition:all .15s;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.12);color:var(--blue2);border-color:rgba(59,130,246,.2)}
+.nav-icon{font-size:.95rem;width:18px;text-align:center}
+
+/* Security badge in sidebar */
+.security-info{
+  padding:12px;border-top:1px solid var(--border2);
+}
+.security-badge{
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18);
+  border-radius:10px;padding:10px 12px;
+}
+.security-badge-top{
+  display:flex;align-items:center;gap:7px;
+  font-size:.76rem;color:var(--green);font-weight:600;margin-bottom:6px;
+}
+.security-rows{display:flex;flex-direction:column;gap:4px}
+.security-row{
+  display:flex;justify-content:space-between;
+  font-size:.68rem;color:var(--text3);
+}
+.security-row span:last-child{color:var(--text2)}
+
+/* Topbar */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 28px;
+  border-bottom:1px solid var(--border);
+  background:rgba(7,9,15,.85);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-left h1{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+.topbar-left p{font-size:.72rem;color:var(--text2);margin-top:1px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+
+.user-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:8px;padding:6px 12px 6px 8px;
+  font-size:.78rem;cursor:pointer;transition:all .15s;
+}
+.user-chip:hover{border-color:var(--border)}
+.user-avatar{
+  width:24px;height:24px;border-radius:6px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.65rem;font-weight:700;color:#fff;
+}
+.session-timer{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  color:var(--amber);background:rgba(245,158,11,.1);
+  border:1px solid rgba(245,158,11,.2);
+  border-radius:6px;padding:4px 10px;
+  display:flex;align-items:center;gap:5px;
+}
+
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;
+  cursor:pointer;transition:all .2s;border:none;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--blue),#2563eb);
+  color:#fff;box-shadow:0 2px 12px var(--glow);
+}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-ghost{background:var(--surface);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border)}
+.btn-danger{background:rgba(244,63,94,.12);color:var(--red);border:1px solid rgba(244,63,94,.2)}
+.btn-danger:hover{background:rgba(244,63,94,.2)}
+
+/* Main content */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px 28px 0}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:16px 18px;transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--border)}
+.stat-label{font-size:.7rem;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:1.6rem;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.stat-sub{font-size:.7rem;color:var(--text3);margin-top:6px}
+.stat-up{color:var(--green)}
+.stat-down{color:var(--red)}
+
+/* Content */
+.content{padding:20px 28px 40px;display:flex;flex-direction:column;gap:18px}
+
+/* Add client bar */
+.add-client-bar{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:16px 18px;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+}
+.add-client-bar input,.add-client-bar select{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:.82rem;
+  padding:9px 14px;outline:none;transition:border-color .2s;
+}
+.add-client-bar input{flex:1;min-width:200px}
+.add-client-bar input::placeholder{color:var(--text3)}
+.add-client-bar input:focus,.add-client-bar select:focus{border-color:var(--blue)}
+.add-client-bar select option{background:var(--surface)}
+
+/* Table */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.count-badge{
+  font-size:.68rem;font-family:'JetBrains Mono',monospace;
+  background:rgba(59,130,246,.12);color:var(--blue2);
+  padding:2px 8px;border-radius:99px;border:1px solid rgba(59,130,246,.2);
+}
+.table-wrap{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:14px;overflow:hidden;
+}
+.table-head{
+  display:grid;grid-template-columns:2fr 1.4fr 1.1fr 0.9fr 0.8fr 1.4fr;
+  padding:11px 18px;border-bottom:1px solid var(--border2);background:var(--bg2);
+}
+.th{font-size:.67rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.client-row{
+  display:grid;grid-template-columns:2fr 1.4fr 1.1fr 0.9fr 0.8fr 1.4fr;
+  padding:13px 18px;border-bottom:1px solid var(--border2);
+  align-items:center;transition:background .15s;cursor:pointer;
+}
+.client-row:last-child{border-bottom:none}
+.client-row:hover{background:var(--surface2)}
+.client-name{display:flex;align-items:center;gap:10px}
+.client-avatar{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.8rem;flex-shrink:0;
+}
+.client-info strong{display:block;font-size:.83rem;font-weight:600}
+.client-info span{font-size:.7rem;color:var(--text2)}
+.api-key-cell{
+  display:flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text2);
+}
+.key-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.key-dot.valid{background:var(--green);box-shadow:0 0 6px var(--green)}
+.key-dot.invalid{background:var(--red)}
+.key-dot.checking{background:var(--amber);animation:blink 1s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:99px;font-size:.69rem;font-weight:600;
+}
+.status-pill.active{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.status-pill.paused{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.status-pill.error{background:rgba(244,63,94,.1);color:var(--red);border:1px solid rgba(244,63,94,.2)}
+.workflows-cell{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.row-actions{display:flex;gap:5px}
+.action-btn{
+  padding:4px 9px;border-radius:6px;font-size:.7rem;font-weight:600;
+  cursor:pointer;border:none;font-family:'Outfit',sans-serif;transition:all .15s;
+}
+.action-btn.edit{background:rgba(59,130,246,.12);color:var(--blue2)}
+.action-btn.edit:hover{background:rgba(59,130,246,.22)}
+.action-btn.check{background:rgba(16,185,129,.1);color:var(--green)}
+.action-btn.check:hover{background:rgba(16,185,129,.2)}
+.action-btn.danger{background:rgba(244,63,94,.1);color:var(--red)}
+.action-btn.danger:hover{background:rgba(244,63,94,.2)}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;width:540px;max-width:95vw;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  transform:translateY(20px);transition:transform .25s;
+  max-height:90vh;overflow-y:auto;
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{
+  padding:20px 22px 16px;border-bottom:1px solid var(--border2);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-header h2{font-size:.95rem;font-weight:700}
+.modal-close{
+  background:var(--surface2);border:none;color:var(--text2);
+  width:26px;height:26px;border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border2);display:flex;gap:10px;justify-content:flex-end}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fl{font-size:.76rem;color:var(--text2);font-weight:500}
+.fi,.ft,.fs{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:.83rem;
+  padding:10px 14px;outline:none;transition:border-color .2s;width:100%;
+}
+.fi:focus,.ft:focus,.fs:focus{border-color:var(--blue)}
+.fi::placeholder,.ft::placeholder{color:var(--text3)}
+.ft{resize:vertical;min-height:85px;font-size:.78rem;line-height:1.6}
+.fs option{background:var(--surface)}
+.key-preview{
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:8px;padding:9px 14px;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  color:var(--cyan);display:flex;align-items:center;justify-content:space-between;
+}
+.verify-result{
+  padding:9px 14px;border-radius:8px;font-size:.76rem;display:none;
+}
+.verify-result.success{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.verify-result.fail{background:rgba(244,63,94,.1);color:var(--red);border:1px solid rgba(244,63,94,.2)}
+
+/* Change Password Modal */
+.pwd-strength{margin-top:6px}
+.pwd-bar{height:4px;border-radius:99px;background:var(--surface3);overflow:hidden;margin-bottom:4px}
+.pwd-fill{height:100%;border-radius:99px;transition:all .3s;width:0%}
+.pwd-label{font-size:.68rem;color:var(--text3)}
+
+/* Lockout screen */
+#lockoutScreen{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(7,9,15,.97);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+  gap:16px;text-align:center;padding:24px;
+}
+.lockout-icon{font-size:3rem;margin-bottom:8px}
+.lockout-title{font-size:1.2rem;font-weight:700;color:var(--red)}
+.lockout-desc{font-size:.82rem;color:var(--text2);max-width:320px;line-height:1.6}
+.lockout-timer{
+  font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;
+  color:var(--amber);margin:8px 0;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:500;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 18px;
+  font-size:.8rem;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  transform:translateY(80px);opacity:0;transition:all .3s;
+  max-width:320px;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- ══ LOCKOUT SCREEN ══ -->
+<div id="lockoutScreen">
+  <div class="lockout-icon">🔒</div>
+  <div class="lockout-title">Account Temporarily Locked</div>
+  <div class="lockout-desc">Too many failed login attempts. For security, your account is locked.</div>
+  <div class="lockout-timer" id="lockoutTimer">05:00</div>
+  <div style="font-size:.75rem;color:var(--text3)">Auto-unlocks after timer. Contact admin if urgent.</div>
+</div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+
+    <div class="login-logo">
+      <div class="login-logo-mark">OS</div>
+      <div class="login-logo-text">Agent<span>OS</span></div>
+    </div>
+
+    <div class="login-card">
+      <h2>Secure Agency Login</h2>
+      <p>Your client data is protected.<br>Enter credentials to access the control panel.</p>
+
+      <div class="form-group">
+        <label class="form-label">Username / Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input class="form-input" id="loginUser" type="text" placeholder="admin@youragency.com" autocomplete="username"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Password
+          <a onclick="showForgot()">Forgot password?</a>
+        </label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input class="form-input" id="loginPass" type="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+          <span class="input-eye" id="eyeBtn" onclick="toggleEye()">👁️</span>
+        </div>
+      </div>
+
+      <div class="login-error" id="loginError">
+        <span>⚠️</span>
+        <span id="loginErrorMsg">Invalid credentials. Try again.</span>
+      </div>
+
+      <div class="attempts-bar" id="attemptsBar">
+        <div class="attempt-dot" id="d1"></div>
+        <div class="attempt-dot" id="d2"></div>
+        <div class="attempt-dot" id="d3"></div>
+        <div class="attempt-dot" id="d4"></div>
+        <div class="attempt-dot" id="d5"></div>
+      </div>
+      <div style="text-align:center;font-size:.68rem;color:var(--text3);margin-top:5px;margin-bottom:14px" id="attemptsLabel"></div>
+
+      <button class="btn-login" id="loginBtn" onclick="doLogin()">
+        <span id="loginBtnIcon">🔓</span>
+        <span id="loginBtnText">Sign In Securely</span>
+      </button>
+
+      <div class="login-divider"><span>Demo Credentials</span></div>
+
+      <div class="demo-creds">
+        <p>Click to auto-fill:</p>
+        <div class="demo-row">
+          <span>Username</span>
+          <code onclick="fillDemo('user')">admin</code>
+        </div>
+        <div class="demo-row">
+          <span>Password</span>
+          <code onclick="fillDemo('pass')">Agency@2024</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-footer">
+      <span>🔐</span> All data encrypted · <span>✓</span> Auto-logout after 30 min<br>
+      <span>🛡️</span> 5 attempts max · lockout on breach
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ DASHBOARD SCREEN ══ -->
+<div id="dashboardScreen">
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">OS</div>
+      <div class="logo-text">Agent<span>OS</span></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active"><span class="nav-icon">⚡</span>Clients</div>
+      <div class="nav-item"><span class="nav-icon">🔑</span>API Keys</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>Instructions</div>
+      <div class="nav-item"><span class="nav-icon">🔄</span>Workflows</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>Analytics</div>
+      <div class="nav-item" onclick="openChangePwd()"><span class="nav-icon">🛡️</span>Change Password</div>
+      <div class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Logout</div>
+    </nav>
+    <div class="security-info">
+      <div class="security-badge">
+        <div class="security-badge-top">🔐 Session Active</div>
+        <div class="security-rows">
+          <div class="security-row"><span>Logged in as</span><span id="sbUser">admin</span></div>
+          <div class="security-row"><span>Session</span><span id="sbTimer" style="color:var(--amber)">30:00</span></div>
+          <div class="security-row"><span>Attempts left</span><span id="sbAttempts" style="color:var(--green)">5/5</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Client Control Panel</h1>
+        <p>All client APIs & instructions — secured & private</p>
+      </div>
+      <div class="topbar-right">
+        <div class="session-timer" id="topTimer">⏱ 30:00</div>
+        <div class="user-chip" onclick="openChangePwd()">
+          <div class="user-avatar" id="userInitial">A</div>
+          <span id="userLabel">admin</span>
+        </div>
+        <button class="btn btn-danger" onclick="doLogout()">Logout</button>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Client</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-val" style="color:var(--blue2)" id="statClients">0</div>
+        <div class="stat-sub">in your agency</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Keys Valid</div>
+        <div class="stat-val" style="color:var(--green)" id="statKeys">0</div>
+        <div class="stat-sub" id="statKeysSub">all good</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Workflows</div>
+        <div class="stat-val" style="color:var(--cyan)" id="statFlows">0</div>
+        <div class="stat-sub">running now</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Login</div>
+        <div class="stat-val" style="color:var(--purple);font-size:1rem" id="statLogin">—</div>
+        <div class="stat-sub">this session</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Quick add bar -->
+      <div class="add-client-bar">
+        <span style="font-size:.8rem;color:var(--text2);white-space:nowrap">Quick Add:</span>
+        <input type="url" id="quickUrl" placeholder="Paste client URL or API docs link…"/>
+        <select id="quickPlatform">
+          <option>OpenAI</option>
+          <option>GoHighLevel</option>
+          <option>Make.com</option>
+          <option>n8n</option>
+          <option>Custom API</option>
+        </select>
+        <button class="btn btn-primary" onclick="quickAdd()">Detect & Add →</button>
+      </div>
+
+      <!-- Clients table -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">
+            All Clients
+            <span class="count-badge" id="clientCount">0 clients</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="font-size:.74rem;padding:6px 12px" onclick="checkAllKeys()">🔄 Check All Keys</button>
+            <button class="btn btn-ghost" style="font-size:.74rem;padding:6px 12px" onclick="exportData()">↓ Export</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="th">Client</div>
+            <div class="th">API Key</div>
+            <div class="th">Platform</div>
+            <div class="th">Status</div>
+            <div class="th">Flows</div>
+            <div class="th">Actions</div>
+          </div>
+          <div id="clientsBody"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ CLIENT MODAL ══ -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Add New Client</h2>
+      <button class="modal-close" onclick="closeModal('clientModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Client Name *</label>
+        <input class="fi" id="mName" placeholder="e.g. Sarah Johnson — Real Estate Pro"/></div>
+      <div class="fg"><label class="fl">Website / Docs URL</label>
+        <input class="fi" id="mUrl" placeholder="https://client-website.com"/></div>
+      <div class="fg"><label class="fl">Platform</label>
+        <select class="fs" id="mPlatform">
+          <option>OpenAI</option><option>GoHighLevel</option>
+          <option>Make.com</option><option>n8n</option><option>Custom API</option>
+        </select></div>
+      <div class="fg"><label class="fl">API Key (encrypted on save)</label>
+        <input class="fi" id="mKey" type="password" placeholder="sk-… or paste key here"/>
+        <div class="key-preview" id="keyPreview">🔐 Key will be encrypted on save</div></div>
+      <div class="fg"><label class="fl">AI Instructions / System Prompt</label>
+        <textarea class="ft" id="mInstructions" placeholder="You are an AI assistant for [Client Name].&#10;&#10;Your role: ...&#10;Rules:&#10;- Always respond professionally&#10;- Escalate issues above $500&#10;- Never mention competitors"></textarea></div>
+      <div class="verify-result" id="verifyResult"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="verifyKey()">🔍 Verify Key</button>
+      <button class="btn btn-ghost" onclick="closeModal('clientModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client 🔐</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHANGE PASSWORD MODAL ══ -->
+<div class="modal-overlay" id="pwdModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🛡️ Change Password</h2>
+      <button class="modal-close" onclick="closeModal('pwdModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Current Password</label>
+        <input class="fi" id="curPwd" type="password" placeholder="Enter current password"/></div>
+      <div class="fg"><label class="fl">New Password</label>
+        <input class="fi" id="newPwd" type="password" placeholder="Min 8 chars, 1 uppercase, 1 number" oninput="checkStrength()"/>
+        <div class="pwd-strength">
+          <div class="pwd-bar"><div class="pwd-fill" id="pwdFill"></div></div>
+          <div class="pwd-label" id="pwdLabel">Enter a password</div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Confirm New Password</label>
+        <input class="fi" id="confPwd" type="password" placeholder="Repeat new password"/></div>
+      <div class="verify-result" id="pwdResult"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('pwdModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastMsg">Done</span>
+</div>
+
+<script>
+// ══ AUTH SYSTEM ════════════════════════════════════════
+const USERS = {
+  'admin': { password: 'Agency@2024', role: 'owner' },
+};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 300;
+const SESSION_SECONDS = 1800;
+
+let attempts = 0;
+let locked = false;
+let lockTimer = null;
+let sessionTimer = null;
+let sessionLeft = SESSION_SECONDS;
+let currentUser = null;
+
+// ── Login ──
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtn');
+
+  if (!user || !pass) { showLoginError('Please enter username and password.'); return; }
+
+  btn.classList.add('loading');
+  document.getElementById('loginBtnIcon').textContent = '⏳';
+  document.getElementById('loginBtnText').textContent = 'Verifying…';
+
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    document.getElementById('loginBtnIcon').textContent = '🔓';
+    document.getElementById('loginBtnText').textContent = 'Sign In Securely';
+
+    const u = USERS[user];
+    if (u && u.password === pass) {
+      attempts = 0;
+      updateAttemptDots();
+      loginSuccess(user);
+    } else {
+      attempts++;
+      updateAttemptDots();
+      if (attempts >= MAX_ATTEMPTS) {
+        startLockout();
+      } else {
+        const left = MAX_ATTEMPTS - attempts;
+        showLoginError(`Wrong credentials. ${left} attempt${left>1?'s':''} remaining.`);
+      }
+    }
+  }, 900);
+}
+
+function loginSuccess(user) {
+  currentUser = user;
+  hideLoginError();
+
+  // update UI
+  document.getElementById('sbUser').textContent = user;
+  document.getElementById('userLabel').textContent = user;
+  document.getElementById('userInitial').textContent = user.charAt(0).toUpperCase();
+  document.getElementById('statLogin').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+  // hide login
+  document.getElementById('loginScreen').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboardScreen').style.display = 'block';
+  }, 400);
+
+  startSessionTimer();
+  renderStats();
+  render();
+  showToast('✓ Welcome back, ' + user + '!', 'success');
+}
+
+function doLogout() {
+  if (!confirm('Logout and clear session?')) return;
+  clearInterval(sessionTimer);
+  currentUser = null;
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('dashboardScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginScreen').classList.remove('hide');
+  showToast('Logged out securely', 'info');
+}
+
+// ── Attempt dots ──
+function updateAttemptDots() {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('d' + i).className = 'attempt-dot' + (i <= attempts ? ' used' : '');
+  }
+  const left = MAX_ATTEMPTS - attempts;
+  document.getElementById('attemptsLabel').textContent =
+    attempts > 0 ? `${left} attempt${left !== 1 ? 's' : ''} remaining` : '';
+  document.getElementById('sbAttempts').textContent = left + '/5';
+  document.getElementById('sbAttempts').style.color = left <= 2 ? 'var(--red)' : 'var(--green)';
+}
+
+// ── Lockout ──
+function startLockout() {
+  locked = true;
+  let secs = LOCKOUT_SECONDS;
+  const lockScreen = document.getElementById('lockoutScreen');
+  lockScreen.style.display = 'flex';
+
+  lockTimer = setInterval(() => {
+    secs--;
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    document.getElementById('lockoutTimer').textContent = `${m}:${s}`;
+    if (secs <= 0) {
+      clearInterval(lockTimer);
+      locked = false;
+      attempts = 0;
+      updateAttemptDots();
+      lockScreen.style.display = 'none';
+      document.getElementById('loginError').classList.remove('show');
+    }
+  }, 1000);
+}
+
+// ── Session timer ──
+function startSessionTimer() {
+  sessionLeft = SESSION_SECONDS;
+  clearInterval(sessionTimer);
+  sessionTimer = setInterval(() => {
+    sessionLeft--;
+    const m = String(Math.floor(sessionLeft / 60)).padStart(2, '0');
+    const s = String(sessionLeft % 60).padStart(2, '0');
+    const label = `⏱ ${m}:${s}`;
+    document.getElementById('topTimer').textContent = label;
+    document.getElementById('sbTimer').textContent = `${m}:${s}`;
+    if (sessionLeft <= 300) {
+      document.getElementById('topTimer').style.color = 'var(--red)';
+    }
+    if (sessionLeft <= 0) {
+      clearInterval(sessionTimer);
+      showToast('⚠️ Session expired — please login again', 'error');
+      setTimeout(doLogout, 2000);
+    }
+  }, 1000);
+}
+
+// ── Eye toggle ──
+function toggleEye() {
+  const inp = document.getElementById('loginPass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function showLoginError(msg) {
+  document.getElementById('loginErrorMsg').textContent = msg;
+  document.getElementById('loginError').classList.add('show');
+}
+function hideLoginError() {
+  document.getElementById('loginError').classList.remove('show');
+}
+
+function fillDemo(type) {
+  if (type === 'user') document.getElementById('loginUser').value = 'admin';
+  if (type === 'pass') document.getElementById('loginPass').value = 'Agency@2024';
+}
+
+function showForgot() {
+  showToast('Contact your admin to reset password', 'info');
+}
+
+// ── Change Password ──
+function openChangePwd() {
+  document.getElementById('curPwd').value = '';
+  document.getElementById('newPwd').value = '';
+  document.getElementById('confPwd').value = '';
+  document.getElementById('pwdResult').style.display = 'none';
+  document.getElementById('pwdFill').style.width = '0%';
+  document.getElementById('pwdLabel').textContent = 'Enter a password';
+  document.getElementById('pwdModal').classList.add('open');
+}
+
+function checkStrength() {
+  const p = document.getElementById('newPwd').value;
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  const colors = ['var(--red)', 'var(--red)', 'var(--amber)', 'var(--amber)', 'var(--green)'];
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong 💪'];
+  const fill = document.getElementById('pwdFill');
+  fill.style.width = (score * 25) + '%';
+  fill.style.background = colors[score];
+  document.getElementById('pwdLabel').textContent = labels[score] || '';
+  document.getElementById('pwdLabel').style.color = colors[score];
+}
+
+function changePassword() {
+  const cur = document.getElementById('curPwd').value;
+  const nw = document.getElementById('newPwd').value;
+  const conf = document.getElementById('confPwd').value;
+  const res = document.getElementById('pwdResult');
+
+  res.style.display = 'block';
+  if (!USERS[currentUser] || USERS[currentUser].password !== cur) {
+    res.className = 'verify-result fail';
+    res.textContent = '✗ Current password incorrect';
+    return;
+  }
+  if (nw.length < 8) {
+    res.className = 'verify-result fail';
+    res.textContent = '✗ New password must be at least 8 characters';
+    return;
+  }
+  if (nw !== conf) {
+    res.className = 'verify-result fail';
+    res.textContent = '✗ Passwords do not match';
+    return;
+  }
+  USERS[currentUser].password = nw;
+  res.className = 'verify-result success';
+  res.textContent = '✓ Password updated successfully!';
+  setTimeout(() => closeModal('pwdModal'), 1500);
+  showToast('🔐 Password changed successfully', 'success');
+}
+
+// ══ CLIENT DATA ═══════════════════════════════════════
+let clients = [
+  {id:1,name:'Client Alpha',url:'alpha-agency.com',platform:'GoHighLevel',key:'ghl_••••8f2a',keyStatus:'valid',status:'active',workflows:4,color:'#3b82f6',instructions:'AI visibility consultant. Focus on AI-readable data for real estate.'},
+  {id:2,name:'Client Beta',url:'beta-solutions.io',platform:'OpenAI',key:'sk-••••9c1d',keyStatus:'valid',status:'active',workflows:3,color:'#10b981',instructions:'B2B AI architect. Prioritize ROI metrics and capital efficiency.'},
+  {id:3,name:'Client Gamma',url:'gamma-auto.co',platform:'n8n',key:'n8n_••••3b7e',keyStatus:'checking',status:'paused',workflows:2,color:'#a78bfa',instructions:'Workflow automation. Help with MCP server configurations.'},
+  {id:4,name:'Client Delta',url:'delta-re.com',platform:'Make.com',key:'mk_••••5d4c',keyStatus:'invalid',status:'error',workflows:1,color:'#f43f5e',instructions:'Real estate VA. Manage listings, follow-ups, appointments.'},
+];
+let editId = null;
+
+function render() {
+  const body = document.getElementById('clientsBody');
+  if (!clients.length) {
+    body.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text3);font-size:.82rem">No clients yet — add your first client above</div>`;
+    return;
+  }
+  body.innerHTML = clients.map(c => `
+    <div class="client-row" onclick="openEdit(${c.id})">
+      <div class="client-name">
+        <div class="client-avatar" style="background:${c.color}22;color:${c.color}">${c.name.charAt(0)}</div>
+        <div class="client-info">
+          <strong>${c.name}</strong>
+          <span>${c.url}</span>
+        </div>
+      </div>
+      <div class="api-key-cell">
+        <div class="key-dot ${c.keyStatus}"></div>
+        <span>${c.key}</span>
+      </div>
+      <div style="font-size:.76rem;color:var(--text2)">${c.platform}</div>
+      <div><span class="status-pill ${c.status}">${c.status}</span></div>
+      <div class="workflows-cell">${c.workflows}</div>
+      <div class="row-actions" onclick="event.stopPropagation()">
+        <button class="action-btn edit" onclick="openEdit(${c.id})">Edit</button>
+        <button class="action-btn check" onclick="checkKey(${c.id})">Check</button>
+        <button class="action-btn danger" onclick="removeClient(${c.id})">✕</button>
+      </div>
+    </div>`).join('');
+  renderStats();
+}
+
+function renderStats() {
+  document.getElementById('statClients').textContent = clients.length;
+  const valid = clients.filter(c => c.keyStatus === 'valid').length;
+  document.getElementById('statKeys').textContent = valid + '/' + clients.length;
+  const invalid = clients.filter(c => c.keyStatus === 'invalid').length;
+  document.getElementById('statKeysSub').textContent = invalid > 0 ? invalid + ' need attention' : 'all good ✓';
+  document.getElementById('statFlows').textContent = clients.reduce((a, c) => a + c.workflows, 0);
+  document.getElementById('clientCount').textContent = clients.length + ' client' + (clients.length !== 1 ? 's' : '');
+}
+
+// ── Modal ──
+function openAddModal() {
+  editId = null;
+  document.getElementById('modalTitle').textContent = '+ Add New Client';
+  ['mName','mUrl','mKey','mInstructions'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mPlatform').value = 'OpenAI';
+  document.getElementById('keyPreview').textContent = '🔐 Key will be encrypted on save';
+  document.getElementById('verifyResult').style.display = 'none';
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function openEdit(id) {
+  editId = id;
+  const c = clients.find(x => x.id === id);
+  document.getElementById('modalTitle').textContent = '✏️ Edit — ' + c.name;
+  document.getElementById('mName').value = c.name;
+  document.getElementById('mUrl').value = c.url;
+  document.getElementById('mKey').value = '';
+  document.getElementById('mInstructions').value = c.instructions;
+  document.getElementById('mPlatform').value = c.platform;
+  document.getElementById('keyPreview').textContent = '🔐 ' + c.key + ' (enter new key to update)';
+  document.getElementById('verifyResult').style.display = 'none';
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function saveClient() {
+  const name = document.getElementById('mName').value.trim();
+  if (!name) { showToast('Enter client name', 'error'); return; }
+  if (editId) {
+    const c = clients.find(x => x.id === editId);
+    c.name = name;
+    c.url = document.getElementById('mUrl').value || c.url;
+    c.platform = document.getElementById('mPlatform').value;
+    c.instructions = document.getElementById('mInstructions').value;
+    showToast('✓ Client updated & instructions synced', 'success');
+  } else {
+    clients.unshift({
+      id: Date.now(), name,
+      url: document.getElementById('mUrl').value || '—',
+      platform: document.getElementById('mPlatform').value,
+      key: 'new_••••••••', keyStatus: 'checking', status: 'active',
+      workflows: 0,
+      color: ['#3b82f6','#10b981','#a78bfa','#f59e0b','#22d3ee'][Math.floor(Math.random()*5)],
+      instructions: document.getElementById('mInstructions').value
+    });
+    showToast('✓ Client added — verifying API key…', 'success');
+  }
+  closeModal('clientModal');
+  render();
+}
+
+function verifyKey() {
+  const vr = document.getElementById('verifyResult');
+  vr.style.display = 'block';
+  vr.className = 'verify-result';
+  vr.textContent = '🔄 Connecting to API…';
+  setTimeout(() => {
+    const ok = Math.random() > 0.25;
+    vr.className = 'verify-result ' + (ok ? 'success' : 'fail');
+    vr.textContent = ok ? '✓ API key valid — connection established' : '✗ Invalid key — check credentials';
+  }, 1800);
+}
+
+function checkKey(id) {
+  const c = clients.find(x => x.id === id);
+  c.keyStatus = 'checking'; render();
+  setTimeout(() => {
+    c.keyStatus = c.id === 4 ? 'invalid' : 'valid';
+    render();
+    showToast(c.keyStatus === 'valid' ? '✓ ' + c.name + ' key valid' : '✗ ' + c.name + ' key failed', c.keyStatus === 'valid' ? 'success' : 'error');
+  }, 2000);
+}
+
+function checkAllKeys() {
+  clients.forEach(c => c.keyStatus = 'checking'); render();
+  setTimeout(() => {
+    clients.forEach(c => { c.keyStatus = c.id === 4 ? 'invalid' : 'valid'; });
+    render();
+    showToast('✓ All keys checked', 'info');
+  }, 2500);
+}
+
+function removeClient(id) {
+  if (!confirm('Remove this client? This cannot be undone.')) return;
+  clients = clients.filter(x => x.id !== id);
+  render();
+  showToast('Client removed', 'info');
+}
+
+function quickAdd() {
+  const url = document.getElementById('quickUrl').value.trim();
+  if (!url) { document.getElementById('quickUrl').focus(); return; }
+  showToast('🔍 Detecting API structure…', 'info');
+  setTimeout(() => {
+    document.getElementById('quickUrl').value = '';
+    openAddModal();
+    document.getElementById('mUrl').value = url;
+    showToast('✓ URL captured — fill client details', 'success');
+  }, 1600);
+}
+
+function exportData() {
+  const data = clients.map(c => ({ name: c.name, url: c.url, platform: c.platform, status: c.status, workflows: c.workflows }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'agentos-clients.json';
+  a.click();
+  showToast('✓ Data exported (no API keys included)', 'success');
+}
+
+// Key preview
+document.getElementById('mKey').addEventListener('input', function () {
+  const v = this.value;
+  const p = document.getElementById('keyPreview');
+  p.textContent = v.length > 8 ? '🔐 ' + v.slice(0, 6) + '••••••••••••' + v.slice(-4) + ' (will encrypt)' : '🔐 Key will be encrypted on save';
+});
+
+// Toast
+function showToast(msg, type = 'success') {
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + type;
+  document.getElementById('toastIcon').textContent = icons[type] || '✓';
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
