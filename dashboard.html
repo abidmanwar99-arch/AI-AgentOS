@@ -15,175 +15,341 @@
             --text-muted: #94a3b8;
             --card-base: #050811;
         }
-
         [data-theme="light"] {
             --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             --panel-bg: rgba(255, 255, 255, 0.8);
             --border-color: rgba(15, 23, 42, 0.08);
             --text-main: #0f172a;
-            --text-muted: #475569;
+            --text-muted: #64748b;
             --card-base: #ffffff;
         }
-
         body {
             background: var(--bg-gradient);
             color: var(--text-main);
             transition: background 0.3s ease, color 0.3s ease;
         }
-
-        .glass-panel {
+        .glass-shell {
             background: var(--panel-bg);
-            backdrop-filter: blur(24px);
-            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            border-color: var(--border-color);
         }
-
         .card-surface {
             background: var(--card-base);
             border: 1px solid var(--border-color);
         }
     </style>
 </head>
-<body class="min-h-screen flex overflow-hidden font-sans select-none antialiased">
+<body class="min-h-screen font-sans antialiased flex flex-col lg:flex-row overflow-hidden">
 
-    <div id="paywall-injection-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4"></div>
+    <header class="lg:hidden w-full bg-slate-950/90 border-b border-slate-900 px-6 py-4 flex justify-between items-center z-40 fixed top-0 left-0">
+        <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-cyan-400"></div>
+            <span class="text-lg font-black tracking-widest text-white">AGENT.OS</span>
+        </div>
+        <button onclick="toggleMobileSidebar(true)" class="p-2 text-slate-400 hover:text-white transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </header>
 
-    <aside id="sidebar-drawer-shell" class="fixed inset-y-0 left-0 z-40 w-64 glass-panel border-r flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out">
-        <div class="flex flex-col">
-            <div class="p-6 flex items-center justify-between border-b border-slate-900/40">
+    <aside id="sidebar-container" class="fixed inset-y-0 left-0 w-72 glass-shell border-r z-50 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:h-screen shrink-0">
+        
+        <div class="flex flex-col flex-1 overflow-y-auto">
+            <div class="p-6 flex items-center justify-between border-b border-inherit">
                 <div class="flex items-center gap-2.5">
-                    <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6.119c-.035 1.042-.015 2.074.062 3.076a11.96 11.96 0 0011.66 11.662c1.002-.077 2.034-.097 3.076-.062a11.959 11.959 0 01-3.219-3.219m-.119-3.219l11.66-11.662z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25c.348 0 .69.025 1.028.072M21 12.75a8.961 8.961 0 01-1.127 4.298"></path>
-                    </svg>
-                    <span class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">AGENT<span class="text-emerald-400">.OS</span></span>
+                    <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
+                    <span class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AGENT.OS</span>
                 </div>
-                <button onclick="toggleMobileSidebar(false)" class="lg:hidden text-var(--text-muted) p-1 rounded hover:bg-slate-900/40">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button onclick="toggleMobileSidebar(false)" class="lg:hidden text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
-            <nav class="p-4 space-y-1.5 flex-1">
-                <button id="nav-btn-aggregator" onclick="switchActiveViewportSegment('aggregator')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-100 bg-emerald-600/10 border border-emerald-500/20">
-                    <span>Centralized Aggregator</span>
+            <div class="p-6 border-b border-inherit bg-slate-950/20 flex items-center gap-4">
+                <div class="relative group shrink-0">
+                    <img id="profile-avatar" class="w-12 h-12 rounded-full object-cover border border-cyan-500/30 bg-slate-900 shadow-inner" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120" alt="Avatar">
+                    <label class="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity duration-200">
+                        <input type="file" id="avatar-uploader" accept="image/*" class="hidden" onchange="uploadProfileAvatarStream(event)">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                    </label>
+                </div>
+                <div class="overflow-hidden">
+                    <h4 id="user-display-email" class="text-xs font-mono font-bold truncate text-slate-300">Loading Session...</h4>
+                    <span id="lbl-role" class="text-[10px] uppercase font-bold text-cyan-400/80 tracking-widest block mt-0.5">Ops Director</span>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-3 border-b border-inherit">
+                <div>
+                    <label id="lbl-theme-heading" class="block text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Canvas Aesthetic Visual State</label>
+                    <button onclick="toggleVisualThemeState()" class="w-full card-surface rounded p-2 text-left text-xs font-medium flex items-center justify-between hover:border-cyan-500/40 transition-colors cursor-pointer">
+                        <span id="theme-status-label">Cyber Dark Mode</span>
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                </div>
+                <div>
+                    <label id="lbl-lang-heading" class="block text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">System Communication Core Language</label>
+                    <select id="language-dropdown" onchange="synchronizeSystemLanguage(this.value)" class="w-full card-surface rounded p-2 text-xs font-mono text-inherit focus:outline-none focus:border-cyan-500 transition-colors bg-transparent cursor-pointer">
+                        <option value="en" class="bg-slate-950">English (Global Matrix)</option>
+                        <option value="ar" class="bg-slate-950">العربية (Middle East Node)</option>
+                        <option value="es" class="bg-slate-950">Español (Castilian Core)</option>
+                        <option value="fr" class="bg-slate-950">Français (Euro Standard)</option>
+                        <option value="ur" class="bg-slate-950">اردو (Regional Stack)</option>
+                    </select>
+                </div>
+            </div>
+
+            <nav class="p-4 flex-1 space-y-1.5">
+                <button onclick="switchWorkspaceView('aggregator')" id="nav-aggregator" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/30 border border-cyan-800/30 font-bold transition-all cursor-pointer">
+                    <span id="lbl-nav-aggregator">Automation Aggregator</span>
                 </button>
-                <button id="nav-btn-vault" onclick="switchActiveViewportSegment('vault')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30">
-                    <span>Circuit-Breaker Vault</span>
+                <button onclick="switchWorkspaceView('vault')" id="nav-vault" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all cursor-pointer">
+                    <span id="lbl-nav-vault">Fail-Safe Data Vault</span>
                 </button>
-                <button id="nav-btn-guide" onclick="switchActiveViewportSegment('guide')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30">
-                    <span>Architectural Guide</span>
+                <button onclick="switchWorkspaceView('guide')" id="nav-guide" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all cursor-pointer">
+                    <span id="lbl-nav-guide">Onboarding System Guide</span>
                 </button>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-inherit bg-slate-950/20">
-            <div class="flex items-center gap-3 p-1">
-                <div class="flex flex-col min-w-0">
-                    <span id="user-display-email" class="text-[11px] font-mono text-var(--text-main) truncate font-bold">active@agentos.io</span>
-                    <span class="text-[9px] font-mono text-emerald-400 uppercase tracking-widest mt-0.5">Ops Director</span>
-                </div>
+        <div class="p-4 border-t border-inherit text-center bg-slate-950/40">
+            <div id="lbl-footer-signature" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-relaxed">
+                Secured Framework Node <br> Engineered by <span class="text-cyan-400 font-bold">ABID Anwar</span>
             </div>
-            <button onclick="terminateSessionAuthentication()" class="w-full mt-3 py-2 border border-red-500/20 bg-red-950/10 hover:bg-red-900/20 text-red-400 font-mono text-[10px] uppercase tracking-widest font-bold rounded-lg transition-colors">
-                Terminate Authorization
+            <button onclick="terminateSessionAuthentication()" id="lbl-terminate-btn" class="mt-2 w-full text-center text-[10px] font-mono text-red-400/80 hover:text-red-400 transition-colors py-1 hover:underline cursor-pointer">
+                [ Terminate Infrastructure Connection ]
             </button>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header class="h-16 border-b flex items-center justify-between px-6 glass-panel shrink-0 z-30">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleMobileSidebar(true)" class="lg:hidden text-var(--text-muted) p-1 rounded hover:bg-slate-900/40">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-                <div class="hidden sm:flex items-center gap-2 px-2 py-1 rounded bg-slate-950/40 border border-slate-900 text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                    <span>Environment: Production Live Matrix</span>
-                </div>
-            </div>
+    <main class="flex-1 overflow-y-auto p-6 lg:p-10 pt-24 lg:pt-10 relative z-10 w-full">
+        <div id="paywall-injection-overlay" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-filter blur-md flex items-center justify-center p-6"></div>
 
-            <div class="flex items-center gap-4">
-                <button onclick="toggleEcosystemThemeState()" class="p-2 border rounded-lg text-var(--text-muted) hover:text-var(--text-main) bg-slate-950/20">
-                    <svg id="theme-icon-indicator" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z"></path></svg>
-                </button>
+        <div id="active-viewport-view" class="w-full max-w-7xl mx-auto space-y-8">
+            <div id="loading-spinner-state" class="flex flex-col items-center justify-center py-24 space-y-3">
+                <div class="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
+                <p id="lbl-loading-text" class="text-xs font-mono text-slate-500 uppercase tracking-widest">Wired Authentication Handshake Ingestion Ongoing...</p>
             </div>
-        </header>
-
-        <main class="flex-1 overflow-y-auto p-6 lg:p-8 w-full max-w-7xl mx-auto" id="active-viewport-view">
-            <div id="loading-spinner-state" class="flex items-center justify-center py-24">
-                <div class="w-6 h-6 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin"></div>
-            </div>
-        </main>
-    </div>
-
-    <div id="sidebar-drawer-backdrop" onclick="toggleMobileSidebar(false)" class="hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs lg:hidden"></div>
+        </div>
+    </main>
 
     <script>
-        function toggleMobileSidebar(open) {
-            const drawer = document.getElementById('sidebar-drawer-shell');
-            const backdrop = document.getElementById('sidebar-drawer-backdrop');
-            if (open) {
-                drawer.classList.remove('-translate-x-full');
-                backdrop.classList.remove('hidden');
-            } else {
-                drawer.classList.add('-translate-x-full');
-                backdrop.classList.add('hidden');
-            }
-        }
+        const SUPABASE_URL = "https://your-project-id.supabase.co";
+        const SUPABASE_ANON_KEY = "your-anon-public-key-string";
 
-        async function toggleEcosystemThemeState() {
-            if (!window.AgentOS || !window.AgentOS.currentUser) return;
-            const activeTheme = window.AgentOS.currentTheme === 'dark' ? 'light' : 'dark';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let activeSessionUser = null;
+        let currentVisualTheme = 'dark';
+        let currentLanguage = 'en';
+
+        // Complete Language Dictionary Matrix
+        const dictionaryMatrix = {
+            en: {
+                role: "Ops Director",
+                themeHeading: "Canvas Aesthetic Visual State",
+                themeDark: "Cyber Dark Mode",
+                themeLight: "Premium Clean White Theme",
+                langHeading: "System Communication Core Language",
+                navAggregator: "Automation Aggregator",
+                navVault: "Fail-Safe Data Vault",
+                navGuide: "Onboarding System Guide",
+                signature: "Secured Framework Node <br> Engineered by <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
+                terminate: "[ Terminate Infrastructure Connection ]",
+                loadingText: "Wired Authentication Handshake Ingestion Ongoing..."
+            },
+            ar: {
+                role: "مدير العمليات",
+                themeHeading: "الحالة المرئية الجمالية للمصفوفة",
+                themeDark: "الوضع المظلم السيبراني",
+                themeLight: "الوضع الأبيض المميز",
+                langHeading: "لغة نظام الاتصال الأساسية",
+                navAggregator: "مجمع الأتمتة المركزي",
+                navVault: "خزنة البيانات الآمنة",
+                navGuide: "دليل تهيئة النظام",
+                signature: "عقدة إطار العمل الآمنة <br> تم التطوير بواسطة <span class='text-cyan-400 font-bold'>عابد أنوار</span>",
+                terminate: "[ إنهاء اتصال البنية التحتية ]",
+                loadingText: "جاري استيعاب مصافحة المصادقة السلكية..."
+            },
+            es: {
+                role: "Director de Operaciones",
+                themeHeading: "Estado Visual Estético del Canvas",
+                themeDark: "Modo Cyber Oscuro",
+                themeLight: "Tema Blanco Premium",
+                langHeading: "Idioma Central de Comunicación",
+                navAggregator: "Agregador de Automatización",
+                navVault: "Bóveda de Datos Segura",
+                navGuide: "Guía de Incorporación",
+                signature: "Nodo de Infraestructura Seguro <br> Diseñado por <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
+                terminate: "[ Terminar Conexión de Infraestructura ]",
+                loadingText: "Ingestión de Autenticación en Curso..."
+            },
+            fr: {
+                role: "Directeur des Opérations",
+                themeHeading: "État Visuel Esthétique du Canvas",
+                themeDark: "Mode Cyber Dark",
+                themeLight: "Thème Blanc Premium",
+                langHeading: "Langue Principale du Système",
+                navAggregator: "Agregateur d'Automatisation",
+                navVault: "Coffre-fort de Données",
+                navGuide: "Guide d'Intégration Système",
+                signature: "Nœud d'Infrastructure Sécurisé <br> Développé par <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
+                terminate: "[ Terminer la Connexion d'Infrastructure ]",
+                loadingText: "Authentification Réseau en Cours..."
+            },
+            ur: {
+                role: "آپریشنز ڈائریکٹر",
+                themeHeading: "کینوس کی بصری حالت",
+                themeDark: "سائبر ڈارک موڈ",
+                themeLight: "پریمیم وائٹ تھیم",
+                langHeading: "سسٹم کی بنیادی زبان",
+                navAggregator: "آٹومیشن ایگریگیٹر",
+                navVault: "سیف ڈیٹا وولٹ",
+                navGuide: "سسٹم آن بورڈنگ گائیڈ",
+                signature: "محفوظ فریم ورک نوڈ <br> تیار کردہ <span class='text-cyan-400 font-bold'>عابد انوار</span>",
+                terminate: "[ انفراسٹرکچر کنکشن ختم کریں ]",
+                loadingText: "سیکیورٹی توثیق کا عمل جاری ہے..."
+            }
+        };
+
+        function applyLanguageTranslations(lang) {
+            currentLanguage = lang;
+            const text = dictionaryMatrix[lang] || dictionaryMatrix['en'];
             
-            const { error } = await window.AgentOS.sb
-                .from('agency_profiles')
-                .update({ dashboard_theme: activeTheme })
-                .eq('id', window.AgentOS.currentUser.id);
+            document.getElementById('lbl-role').innerText = text.role;
+            document.getElementById('lbl-theme-heading').innerText = text.themeHeading;
+            document.getElementById('lbl-lang-heading').innerText = text.langHeading;
+            document.getElementById('lbl-nav-aggregator').innerText = text.navAggregator;
+            document.getElementById('lbl-nav-vault').innerText = text.navVault;
+            document.getElementById('lbl-nav-guide').innerText = text.navGuide;
+            document.getElementById('lbl-footer-signature').innerHTML = text.signature;
+            document.getElementById('lbl-terminate-btn').innerText = text.terminate;
+            
+            const loadingText = document.getElementById('lbl-loading-text');
+            if (loadingText) loadingText.innerText = text.loadingText;
 
-            if (!error) {
-                window.AgentOS.currentTheme = activeTheme;
-                document.documentElement.setAttribute('data-theme', activeTheme);
+            // Maintain correct theme sub-label text on language shifts
+            const label = document.getElementById('theme-status-label');
+            if (label) label.innerText = (currentVisualTheme === 'dark') ? text.themeDark : text.themeLight;
+
+            // Handle RTL layouts dynamically for Arabic/Urdu
+            const sidebar = document.getElementById('sidebar-container');
+            if (lang === 'ar' || lang === 'ur') {
+                document.body.setAttribute('dir', 'rtl');
+                sidebar.classList.remove('border-r');
+                sidebar.classList.add('border-l');
+            } else {
+                document.body.removeAttribute('dir');
+                sidebar.classList.remove('border-l');
+                sidebar.classList.add('border-r');
             }
         }
 
-        function switchActiveViewportSegment(viewId) {
-            const tabs = ['aggregator', 'vault', 'guide'];
-            tabs.forEach(tab => {
-                const btn = document.getElementById(`nav-btn-${tab}`);
-                if (btn) {
-                    if (tab === viewId) {
-                        btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-100 bg-emerald-600/10 border border-emerald-500/20";
-                    } else {
-                        btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30";
-                    }
+        function toggleMobileSidebar(openState) {
+            const sidebar = document.getElementById('sidebar-container');
+            if (openState) sidebar.classList.remove('-translate-x-full');
+            else sidebar.classList.add('-translate-x-full');
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = "index.html"; return; }
+            activeSessionUser = session.user;
+            document.getElementById('user-display-email').innerText = activeSessionUser.email;
+            await syncProfileMetadataFromDatabase();
+        });
+
+        async function syncProfileMetadataFromDatabase() {
+            const { data: profile } = await supabaseClient.from('agency_profiles').select('*').eq('id', activeSessionUser.id).single();
+            if (profile) {
+                if (profile.trial_days_remaining <= 0) { enforceTrialHardLockoutState(); return; }
+                if (profile.avatar_url) document.getElementById('profile-avatar').src = profile.avatar_url;
+                if (profile.dashboard_theme) setVisualThemeState(profile.dashboard_theme);
+                if (profile.system_language) {
+                    document.getElementById('language-dropdown').value = profile.system_language;
+                    applyLanguageTranslations(profile.system_language);
+                } else {
+                    applyLanguageTranslations('en');
+                }
+                initializeActiveWorkspaceModules();
+            } else {
+                applyLanguageTranslations('en');
+                initializeActiveWorkspaceModules();
+            }
+        }
+
+        function toggleVisualThemeState() {
+            const targetedTheme = (currentVisualTheme === 'dark') ? 'light' : 'dark';
+            setVisualThemeState(targetedTheme);
+            saveVisualThemeToDatabaseState(targetedTheme);
+        }
+
+        function setVisualThemeState(theme) {
+            currentVisualTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            const text = dictionaryMatrix[currentLanguage] || dictionaryMatrix['en'];
+            const label = document.getElementById('theme-status-label');
+            if (label) label.innerText = (theme === 'dark') ? text.themeDark : text.themeLight;
+        }
+
+        async function saveVisualThemeToDatabaseState(themeValue) {
+            if (!activeSessionUser) return;
+            await supabaseClient.from('agency_profiles').update({ dashboard_theme: themeValue }).eq('id', activeSessionUser.id);
+        }
+
+        async function synchronizeSystemLanguage(langValue) {
+            applyLanguageTranslations(langValue);
+            if (!activeSessionUser) return;
+            await supabaseClient.from('agency_profiles').update({ system_language: langValue }).eq('id', activeSessionUser.id);
+        }
+
+        async function uploadProfileAvatarStream(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const extension = file.name.split('.').pop();
+            const storagePathName = `${activeSessionUser.id}/avatar_matrix_${Date.now()}.${extension}`;
+
+            const { error: storageError } = await supabaseClient.storage.from('avatars').upload(storagePathName, file, { upsert: true });
+            if (storageError) { alert(`Avatar Storage Request Rejected: ${storageError.message}`); return; }
+
+            const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(storagePathName);
+            const { error: dbUpdateError } = await supabaseClient.from('agency_profiles').update({ avatar_url: publicUrl }).eq('id', activeSessionUser.id);
+            if (!dbUpdateError) document.getElementById('profile-avatar').src = publicUrl;
+        }
+
+        function enforceTrialHardLockoutState() {
+            const overlay = document.getElementById('paywall-injection-overlay');
+            overlay.classList.remove('hidden');
+            overlay.innerHTML = `
+                <div class="glass-shell p-8 max-w-lg rounded-2xl text-center border-t-4 border-red-500 shadow-2xl relative bg-slate-950">
+                    <div class="w-12 h-12 rounded-full bg-red-950/50 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-black tracking-wider text-white uppercase">Sandbox Runtime Expired</h2>
+                    <p class="text-xs text-slate-400 mt-2 leading-relaxed">Your 10-day testing deployment loop has successfully timed out.</p>
+                    <a href="https://www.linkedin.com/in/abid" target="_blank" class="block w-full text-center bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-mono text-xs uppercase font-bold tracking-widest py-3.5 rounded shadow-lg transition-all mt-4">Contact Architect on LinkedIn to Unlock Production</a>
+                </div>
+            `;
+        }
+
+        function switchWorkspaceView(viewId) {
+            ['aggregator', 'vault', 'guide'].forEach(id => {
+                const navBtn = document.getElementById(`nav-${id}`);
+                if (navBtn) {
+                    if (id === viewId) navBtn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/30 border border-cyan-800/30 font-bold transition-all";
+                    else navBtn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all";
                 }
             });
-
-            if (viewId === 'aggregator' && window.renderAutomationAggregatorView) {
-                window.renderAutomationAggregatorView();
-            } else if (viewId === 'vault' && window.renderFailSafeVaultView) {
-                window.renderFailSafeVaultView();
-            } else if (viewId === 'guide' && window.renderSystemOnboardingGuideView) {
-                window.renderSystemOnboardingGuideView();
-            }
-            
+            if (viewId === 'aggregator' && window.renderAutomationAggregatorView) window.renderAutomationAggregatorView();
+            else if (viewId === 'vault' && window.renderFailSafeVaultView) window.renderFailSafeVaultView();
+            else if (viewId === 'guide' && window.renderSystemOnboardingGuideView) window.renderSystemOnboardingGuideView();
             toggleMobileSidebar(false);
         }
 
         function initializeActiveWorkspaceModules() {
             const loadingPlaceholder = document.getElementById('loading-spinner-state');
             if (loadingPlaceholder) loadingPlaceholder.remove();
-
-            if (window.renderAutomationAggregatorView) {
-                window.renderAutomationAggregatorView();
-            }
+            if (window.renderAutomationAggregatorView) window.renderAutomationAggregatorView();
         }
 
-        async function terminateSessionAuthentication() {
-            await supabase.auth.signOut();
-            window.location.href = "index.html";
-        }
+        async function terminateSessionAuthentication() { await supabaseClient.auth.signOut(); window.location.href = "index.html"; }
     </script>
-    <script src="core.js"></script>
-    <script src="aggregator.js"></script>
-    <script src="fualt-vault.js"></script>
-    <script src="guide.js"></script>
 </body>
 </html>
