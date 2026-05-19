@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentOS — Infrastructure Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 50%, #080d1a 0%, #020408 100%);
+            --panel-bg: rgba(10, 16, 32, 0.7);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --card-base: #050811;
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --panel-bg: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(15, 23, 42, 0.08);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --card-base: #ffffff;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-surface {
+            background: var(--card-base);
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex overflow-hidden font-sans select-none antialiased">
+
+    <div id="paywall-injection-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4"></div>
+
+    <aside id="sidebar-drawer-shell" class="fixed inset-y-0 left-0 z-40 w-64 glass-panel border-r flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out">
+        <div class="flex flex-col">
+            <div class="p-6 flex items-center justify-between border-b border-slate-900/40">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6.119c-.035 1.042-.015 2.074.062 3.076a11.96 11.96 0 0011.66 11.662c1.002-.077 2.034-.097 3.076-.062a11.959 11.959 0 01-3.219-3.219m-.119-3.219l11.66-11.662z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25c.348 0 .69.025 1.028.072M21 12.75a8.961 8.961 0 01-1.127 4.298"></path>
+                    </svg>
+                    <span class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">AGENT<span class="text-emerald-400">.OS</span></span>
+                </div>
+                <button onclick="toggleMobileSidebar(false)" class="lg:hidden text-var(--text-muted) p-1 rounded hover:bg-slate-900/40">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <nav class="p-4 space-y-1.5 flex-1">
+                <button id="nav-btn-aggregator" onclick="switchActiveViewportSegment('aggregator')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-100 bg-emerald-600/10 border border-emerald-500/20">
+                    <span>Centralized Aggregator</span>
+                </button>
+                <button id="nav-btn-vault" onclick="switchActiveViewportSegment('vault')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30">
+                    <span>Circuit-Breaker Vault</span>
+                </button>
+                <button id="nav-btn-guide" onclick="switchActiveViewportSegment('guide')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30">
+                    <span>Architectural Guide</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-inherit bg-slate-950/20">
+            <div class="flex items-center gap-3 p-1">
+                <div class="flex flex-col min-w-0">
+                    <span id="user-display-email" class="text-[11px] font-mono text-var(--text-main) truncate font-bold">active@agentos.io</span>
+                    <span class="text-[9px] font-mono text-emerald-400 uppercase tracking-widest mt-0.5">Ops Director</span>
+                </div>
+            </div>
+            <button onclick="terminateSessionAuthentication()" class="w-full mt-3 py-2 border border-red-500/20 bg-red-950/10 hover:bg-red-900/20 text-red-400 font-mono text-[10px] uppercase tracking-widest font-bold rounded-lg transition-colors">
+                Terminate Authorization
+            </button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header class="h-16 border-b flex items-center justify-between px-6 glass-panel shrink-0 z-30">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMobileSidebar(true)" class="lg:hidden text-var(--text-muted) p-1 rounded hover:bg-slate-900/40">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div class="hidden sm:flex items-center gap-2 px-2 py-1 rounded bg-slate-950/40 border border-slate-900 text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                    <span>Environment: Production Live Matrix</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="toggleEcosystemThemeState()" class="p-2 border rounded-lg text-var(--text-muted) hover:text-var(--text-main) bg-slate-950/20">
+                    <svg id="theme-icon-indicator" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 lg:p-8 w-full max-w-7xl mx-auto" id="active-viewport-view">
+            <div id="loading-spinner-state" class="flex items-center justify-center py-24">
+                <div class="w-6 h-6 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="sidebar-drawer-backdrop" onclick="toggleMobileSidebar(false)" class="hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs lg:hidden"></div>
+
+    <script>
+        function toggleMobileSidebar(open) {
+            const drawer = document.getElementById('sidebar-drawer-shell');
+            const backdrop = document.getElementById('sidebar-drawer-backdrop');
+            if (open) {
+                drawer.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                drawer.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        async function toggleEcosystemThemeState() {
+            if (!window.AgentOS || !window.AgentOS.currentUser) return;
+            const activeTheme = window.AgentOS.currentTheme === 'dark' ? 'light' : 'dark';
+            
+            const { error } = await window.AgentOS.sb
+                .from('agency_profiles')
+                .update({ dashboard_theme: activeTheme })
+                .eq('id', window.AgentOS.currentUser.id);
+
+            if (!error) {
+                window.AgentOS.currentTheme = activeTheme;
+                document.documentElement.setAttribute('data-theme', activeTheme);
+            }
+        }
+
+        function switchActiveViewportSegment(viewId) {
+            const tabs = ['aggregator', 'vault', 'guide'];
+            tabs.forEach(tab => {
+                const btn = document.getElementById(`nav-btn-${tab}`);
+                if (btn) {
+                    if (tab === viewId) {
+                        btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-100 bg-emerald-600/10 border border-emerald-500/20";
+                    } else {
+                        btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-900/30";
+                    }
+                }
+            });
+
+            if (viewId === 'aggregator' && window.renderAutomationAggregatorView) {
+                window.renderAutomationAggregatorView();
+            } else if (viewId === 'vault' && window.renderFailSafeVaultView) {
+                window.renderFailSafeVaultView();
+            } else if (viewId === 'guide' && window.renderSystemOnboardingGuideView) {
+                window.renderSystemOnboardingGuideView();
+            }
+            
+            toggleMobileSidebar(false);
+        }
+
+        function initializeActiveWorkspaceModules() {
+            const loadingPlaceholder = document.getElementById('loading-spinner-state');
+            if (loadingPlaceholder) loadingPlaceholder.remove();
+
+            if (window.renderAutomationAggregatorView) {
+                window.renderAutomationAggregatorView();
+            }
+        }
+
+        async function terminateSessionAuthentication() {
+            await supabase.auth.signOut();
+            window.location.href = "index.html";
+        }
+    </script>
+    <script src="core.js"></script>
+    <script src="aggregator.js"></script>
+    <script src="fualt-vault.js"></script>
+    <script src="guide.js"></script>
+</body>
+</html>
