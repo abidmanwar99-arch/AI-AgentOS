@@ -1,355 +1,911 @@
-<!DOCTYPE html>
-<html lang="en">
+
+       
+   !DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentOS — Infrastructure Command Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --bg-gradient: radial-gradient(circle at 50% 50%, #080d1a 0%, #020408 100%);
-            --panel-bg: rgba(10, 16, 32, 0.7);
-            --border-color: rgba(255, 255, 255, 0.06);
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --card-base: #050811;
-        }
-        [data-theme="light"] {
-            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            --panel-bg: rgba(255, 255, 255, 0.8);
-            --border-color: rgba(15, 23, 42, 0.08);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --card-base: #ffffff;
-        }
-        body {
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-        .glass-shell {
-            background: var(--panel-bg);
-            backdrop-filter: blur(20px);
-            border-color: var(--border-color);
-        }
-        .card-surface {
-            background: var(--card-base);
-            border: 1px solid var(--border-color);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT.OS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== ROOT ===== */
+:root {
+  --bg:#020810; --bg2:#050f1c; --card:#080e1a; --card2:#0d1626;
+  --cyan:#00d4ff; --green:#00ff88; --red:#ff3355; --gold:#ffd700; --orange:#ff6b35;
+  --text:#e8f4f8; --text2:#6a8fa8; --dim:#1a3a4e; --border:#0d2235;
+  --grid:rgba(0,212,255,0.03);
+  --sidebar-w:240px;
+  --top-h:58px;
+  --bottom-h:32px;
+}
+[data-theme="light"] {
+  --bg:#f0f4f8; --bg2:#e2eaf2; --card:#ffffff; --card2:#f7fafc;
+  --text:#0a1628; --text2:#4a6080; --dim:#c0cfe0; --border:#d0dcea;
+  --grid:rgba(0,100,200,0.03);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  min-height:100vh; overflow-x:hidden;
+  transition:background 0.3s,color 0.3s;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  position:fixed; top:0; left:0; right:0; height:var(--top-h); z-index:400;
+  background:rgba(2,8,16,0.97); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; backdrop-filter:blur(20px);
+  transition:background 0.3s;
+}
+[data-theme="light"] .topbar { background:rgba(240,244,248,0.97); }
+
+.tb-left { display:flex; align-items:center; gap:12px; }
+
+/* HAMBURGER */
+.hamburger {
+  display:flex; flex-direction:column; gap:5px;
+  cursor:pointer; background:none; border:none; padding:5px; z-index:500;
+}
+.hamburger span {
+  display:block; width:22px; height:2px;
+  background:var(--cyan); border-radius:2px; transition:all 0.3s;
+}
+.hamburger.open span:nth-child(1) { transform:rotate(45deg) translate(5px,5px); }
+.hamburger.open span:nth-child(2) { opacity:0; }
+.hamburger.open span:nth-child(3) { transform:rotate(-45deg) translate(5px,-5px); }
+
+/* LOGO */
+.tb-logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+.tb-logo-text { font-family:'Orbitron',monospace; font-size:16px; font-weight:900; letter-spacing:3px; color:var(--text); }
+.tb-logo-text span { color:var(--cyan); }
+.tb-logo-sub { font-family:'JetBrains Mono',monospace; font-size:7px; color:var(--text2); letter-spacing:2px; margin-top:1px; }
+
+.tb-center { display:flex; align-items:center; }
+.trial-pill {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(0,255,136,0.07); border:1px solid rgba(0,255,136,0.2);
+  padding:4px 12px; border-radius:20px;
+}
+.trial-pill.expiring { background:rgba(255,51,85,0.07); border-color:rgba(255,51,85,0.2); }
+.trial-pill-text { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--green); letter-spacing:1px; }
+.trial-pill.expiring .trial-pill-text { color:var(--red); }
+.trial-pill-num { font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--green); }
+.trial-pill.expiring .trial-pill-num { color:var(--red); }
+
+.tb-right { display:flex; align-items:center; gap:8px; }
+.lang-sel {
+  background:var(--card); border:1px solid var(--border); color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:9px; padding:5px 8px;
+  border-radius:6px; cursor:pointer; outline:none; transition:border-color 0.2s;
+}
+.lang-sel:hover { border-color:var(--cyan); }
+.theme-btn {
+  width:40px; height:22px; border-radius:11px; border:none; cursor:pointer;
+  background:var(--border); position:relative; transition:background 0.3s;
+  flex-shrink:0;
+}
+.theme-btn::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--cyan); transition:transform 0.3s;
+}
+[data-theme="light"] .theme-btn::after { transform:translateX(18px); background:var(--orange); }
+
+.notif-wrap { position:relative; cursor:pointer; }
+.notif-btn {
+  width:34px; height:34px; background:var(--card); border:1px solid var(--border);
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  transition:border-color 0.2s; color:var(--text2);
+}
+.notif-btn:hover { border-color:var(--cyan); }
+.notif-dot {
+  position:absolute; top:6px; right:6px; width:7px; height:7px;
+  border-radius:50%; background:var(--red); border:1px solid var(--bg);
+  display:none;
+}
+.user-chip {
+  display:flex; align-items:center; gap:7px;
+  background:var(--card); border:1px solid var(--border);
+  padding:5px 10px; border-radius:20px; cursor:pointer;
+  transition:border-color 0.2s;
+}
+.user-chip:hover { border-color:var(--cyan); }
+.user-av {
+  width:24px; height:24px; border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--green));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-size:9px; font-weight:700; color:#000;
+  overflow:hidden; flex-shrink:0;
+}
+.user-av img { width:100%; height:100%; object-fit:cover; }
+.user-chip-name { font-size:11px; font-weight:600; letter-spacing:1px; }
+
+/* ===== SIDEBAR OVERLAY ===== */
+.sidebar-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.65); z-index:300;
+  backdrop-filter:blur(3px);
+}
+.sidebar-overlay.open { display:block; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position:fixed; top:var(--top-h); left:0; bottom:0;
+  width:var(--sidebar-w); z-index:350;
+  background:rgba(5,15,28,0.98); border-right:1px solid var(--border);
+  overflow-y:auto; overflow-x:hidden;
+  padding:16px 0 80px;
+  transition:transform 0.32s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+}
+[data-theme="light"] .sidebar { background:rgba(226,234,242,0.98); }
+
+/* On desktop, sidebar always visible */
+@media(min-width:901px) {
+  .sidebar { transform:translateX(0) !important; }
+}
+
+.nav-sec { margin-bottom:20px; }
+.nav-sec-lbl {
+  font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--dim);
+  letter-spacing:3px; padding:0 16px; margin-bottom:4px; text-transform:uppercase;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  cursor:pointer; border-left:2px solid transparent;
+  font-size:12px; font-weight:600; letter-spacing:1px; color:var(--text2);
+  transition:all 0.2s; text-decoration:none; position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-item:hover, .nav-item.active {
+  color:var(--cyan); border-left-color:var(--cyan);
+  background:rgba(0,212,255,0.05);
+}
+[data-theme="light"] .nav-item:hover,[data-theme="light"] .nav-item.active { background:rgba(0,100,200,0.07); }
+.nav-item svg { flex-shrink:0; opacity:0.7; }
+.nav-item.active svg { opacity:1; }
+.nav-badge {
+  margin-left:auto; color:#fff;
+  font-family:'JetBrains Mono',monospace; font-size:8px;
+  padding:2px 5px; border-radius:5px; font-weight:700; min-width:18px; text-align:center;
+}
+.nav-badge.red { background:var(--red); }
+.nav-badge.orange { background:var(--orange); }
+
+/* SIDEBAR FOOTER */
+.sidebar-footer {
+  margin-top:auto; padding:12px 10px; border-top:1px solid var(--border);
+  position:sticky; bottom:0; background:inherit;
+}
+.logout-btn {
+  display:flex; align-items:center; gap:8px; width:100%;
+  padding:9px 12px; background:rgba(255,51,85,0.06);
+  border:1px solid rgba(255,51,85,0.15); border-radius:8px;
+  color:var(--red); font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:1px; cursor:pointer; transition:all 0.2s;
+}
+.logout-btn:hover { background:rgba(255,51,85,0.12); }
+
+/* ===== MAIN ===== */
+.main {
+  margin-left:var(--sidebar-w); padding-top:var(--top-h);
+  min-height:100vh; position:relative; z-index:1;
+  transition:margin-left 0.32s;
+}
+.content { padding:20px; padding-bottom:calc(var(--bottom-h) + 16px); }
+
+/* ===== VIEWS ===== */
+.view { display:none; }
+.view.active { display:block; animation:viewIn 0.3s ease; }
+@keyframes viewIn { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+
+.view-hdr { margin-bottom:18px; }
+.view-title { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; letter-spacing:2px; }
+.view-title span { color:var(--cyan); }
+.view-sub { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); letter-spacing:2px; margin-top:3px; }
+
+/* ===== CARDS ===== */
+.card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  overflow:hidden; margin-bottom:16px; position:relative;
+}
+.card-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 16px; border-bottom:1px solid var(--border);
+}
+.card-title { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:2px; }
+.card-action { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--cyan); letter-spacing:1px; cursor:pointer; opacity:0.8; }
+.card-action:hover { opacity:1; }
+.card-body { padding:16px; }
+
+/* PROFILE CARD */
+.profile-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:20px; margin-bottom:16px; display:flex; align-items:center; gap:16px;
+  position:relative; overflow:hidden;
+}
+.profile-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--green),transparent);
+}
+.prof-av {
+  width:58px; height:58px; border-radius:12px; flex-shrink:0;
+  border:2px solid var(--cyan);
+  background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,255,136,0.15));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:var(--cyan);
+  cursor:pointer; transition:all 0.2s; overflow:hidden; position:relative;
+}
+.prof-av:hover { box-shadow:0 0 18px rgba(0,212,255,0.3); }
+.prof-av img { width:100%; height:100%; object-fit:cover; }
+.av-hover {
+  position:absolute; inset:0; background:rgba(0,0,0,0.55);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity 0.2s; color:#fff; font-size:13px;
+}
+.prof-av:hover .av-hover { opacity:1; }
+.prof-info { flex:1; min-width:0; }
+.prof-name { font-family:'Orbitron',monospace; font-size:14px; font-weight:700; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.prof-email { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); letter-spacing:1px; margin-top:2px; }
+.prof-role { display:inline-block; margin-top:6px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:var(--cyan); font-family:'JetBrains Mono',monospace; font-size:8px; padding:2px 8px; border-radius:8px; letter-spacing:1px; }
+.prof-stats { display:flex; gap:14px; flex-shrink:0; }
+.pst { text-align:center; }
+.pst-v { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; color:var(--cyan); }
+.pst-l { font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text2); letter-spacing:1px; }
+
+/* STATS GRID */
+.stats-grid {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:12px; margin-bottom:16px;
+}
+.sg-card {
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:15px; transition:all 0.2s; position:relative; overflow:hidden;
+}
+.sg-card:hover { transform:translateY(-2px); }
+.sg-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
+.sg-card.c1::after { background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+.sg-card.c2::after { background:linear-gradient(90deg,transparent,var(--green),transparent); }
+.sg-card.c3::after { background:linear-gradient(90deg,transparent,var(--orange),transparent); }
+.sg-card.c4::after { background:linear-gradient(90deg,transparent,var(--red),transparent); }
+.sg-val { font-family:'Orbitron',monospace; font-size:24px; font-weight:700; margin-bottom:4px; }
+.c1 .sg-val{color:var(--cyan);} .c2 .sg-val{color:var(--green);} .c3 .sg-val{color:var(--orange);} .c4 .sg-val{color:var(--red);}
+.sg-lbl { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); letter-spacing:1px; }
+
+/* DATA USAGE */
+.du-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.du-item {}
+.du-row { display:flex; justify-content:space-between; margin-bottom:5px; }
+.du-name { font-size:12px; font-weight:600; }
+.du-val { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2); }
+.du-track { background:var(--border); border-radius:3px; height:5px; overflow:hidden; }
+.du-fill { height:100%; border-radius:3px; transition:width 1.2s ease; }
+
+/* LEAD TABLE */
+.lead-row {
+  display:grid; grid-template-columns:1.5fr 1fr 90px 90px 90px;
+  gap:8px; padding:10px 16px; border-bottom:1px solid var(--border);
+  align-items:center; transition:background 0.15s;
+}
+.lead-row:hover { background:rgba(0,212,255,0.02); }
+.lead-row:last-child { border-bottom:none; }
+.lead-row.hdr { font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--dim); letter-spacing:2px; background:rgba(0,0,0,0.15); }
+.l-name { font-size:12px; font-weight:600; }
+.l-sub { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); margin-top:1px; }
+.l-src { font-size:11px; color:var(--text2); }
+.l-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); }
+.priority-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:1px; }
+.priority-tag.critical { background:rgba(255,51,85,0.12); color:var(--red); border:1px solid rgba(255,51,85,0.2); animation:blink 2s infinite; }
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.priority-tag.high { background:rgba(255,107,53,0.12); color:var(--orange); border:1px solid rgba(255,107,53,0.2); }
+.priority-tag.normal { background:rgba(0,255,136,0.08); color:var(--green); border:1px solid rgba(0,255,136,0.15); }
+.act-btn { background:rgba(0,212,255,0.07); border:1px solid rgba(0,212,255,0.15); color:var(--cyan); font-family:'JetBrains Mono',monospace; font-size:8px; padding:4px 8px; border-radius:4px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+.act-btn:hover { background:rgba(0,212,255,0.15); }
+
+/* PLATFORM CARDS */
+.plat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.plat-card { background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.plat-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.plat-name { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:1px; }
+.plat-badge { font-family:'JetBrains Mono',monospace; font-size:8px; padding:2px 7px; border-radius:6px; letter-spacing:1px; }
+.plat-badge.ok { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2); }
+.plat-badge.pending { background:rgba(255,107,53,0.1); color:var(--orange); border:1px solid rgba(255,107,53,0.2); }
+.wf-item { display:flex; align-items:center; justify-content:space-between; padding:7px 9px; background:var(--card); border-radius:6px; border:1px solid var(--border); margin-bottom:6px; }
+.wf-item:last-child { margin-bottom:0; }
+.wf-name { font-size:11px; font-weight:600; }
+.wf-dot { width:6px; height:6px; border-radius:50%; }
+.wf-dot.green { background:var(--green); }
+
+/* CLIENT ROW */
+.client-row { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; border-bottom:1px solid var(--border); transition:background 0.15s; }
+.client-row:hover { background:rgba(0,212,255,0.02); }
+.client-row:last-child { border-bottom:none; }
+.cl-info { display:flex; align-items:center; gap:10px; }
+.cl-av { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',monospace; font-size:10px; font-weight:700; flex-shrink:0; }
+.cl-name { font-size:12px; font-weight:600; }
+.cl-industry { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); margin-top:1px; }
+.status-tag { display:flex; align-items:center; gap:4px; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; }
+.s-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.status-tag.active { color:var(--green); } .status-tag.active .s-dot { background:var(--green); }
+.status-tag.maintenance { color:var(--gold); } .status-tag.maintenance .s-dot { background:var(--gold); }
+.status-tag.issues { color:var(--red); } .status-tag.issues .s-dot { background:var(--red); }
+
+/* HELP GRID */
+.help-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.help-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px; cursor:pointer; transition:all 0.2s; }
+.help-card:hover { border-color:var(--cyan); transform:translateY(-2px); }
+.help-num { font-family:'Orbitron',monospace; font-size:22px; font-weight:900; color:var(--cyan); opacity:0.25; margin-bottom:6px; }
+.help-title { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:6px; }
+.help-text { font-size:12px; color:var(--text2); line-height:1.65; }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:36px 20px; }
+.empty-ico { font-size:36px; opacity:0.25; margin-bottom:10px; }
+.empty-txt { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--dim); letter-spacing:2px; }
+
+/* ACCOUNT FORM */
+.acc-field { margin-bottom:14px; }
+.acc-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); letter-spacing:2px; margin-bottom:5px; display:block; }
+.acc-input { width:100%; background:var(--bg2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:11px; padding:10px 12px; border-radius:7px; outline:none; transition:border-color 0.2s; }
+.acc-input:focus { border-color:var(--cyan); }
+.acc-input:disabled { opacity:0.45; cursor:not-allowed; }
+.acc-btn { padding:9px 20px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:var(--cyan); font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; border-radius:7px; cursor:pointer; transition:all 0.2s; }
+.acc-btn:hover { background:rgba(0,212,255,0.16); }
+
+/* BOTTOM BAR */
+.bottom-bar {
+  position:fixed; bottom:0; left:var(--sidebar-w); right:0; height:var(--bottom-h); z-index:100;
+  background:rgba(2,8,16,0.96); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; backdrop-filter:blur(12px);
+  font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--dim); letter-spacing:2px;
+  transition:left 0.32s;
+}
+[data-theme="light"] .bottom-bar { background:rgba(226,234,242,0.96); }
+.bottom-bar span { color:var(--cyan); opacity:0.5; }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px) {
+  :root { --sidebar-w:0px; }
+  .sidebar { transform:translateX(-240px); width:240px; }
+  .sidebar.open { transform:translateX(0); }
+  .bottom-bar { left:0; }
+  .main { margin-left:0; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .plat-grid { grid-template-columns:1fr; }
+  .help-grid { grid-template-columns:1fr; }
+  .prof-stats { display:none; }
+  .tb-center { display:none; }
+  .du-grid { grid-template-columns:1fr; }
+}
+@media(max-width:600px) {
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .content { padding:12px; }
+  .lead-row { grid-template-columns:1fr 1fr; gap:6px; }
+  .lead-row>*:nth-child(n+3) { display:none; }
+  .lead-row.hdr>*:nth-child(n+3) { display:none; }
+  .user-chip-name { display:none; }
+  .profile-card { flex-wrap:wrap; }
+}
+@media(max-width:400px) {
+  .tb-logo-sub { display:none; }
+}
+
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
 </head>
-<body class="min-h-screen font-sans antialiased flex flex-col lg:flex-row overflow-hidden">
+<body>
 
-    <header class="lg:hidden w-full bg-slate-950/90 border-b border-slate-900 px-6 py-4 flex justify-between items-center z-40 fixed top-0 left-0">
-        <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-cyan-400"></div>
-            <span class="text-lg font-black tracking-widest text-white">AGENT.OS</span>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="tb-left">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="tb-logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 2L3 7V13C3 19.5 7.5 25 14 26.5C20.5 25 25 19.5 25 13V7L14 2Z" fill="rgba(0,212,255,0.08)" stroke="#00d4ff" stroke-width="1.2"/>
+        <path d="M14 7L7 10.5V14C7 17.5 10 20.5 14 21.5C18 20.5 21 17.5 21 14V10.5L14 7Z" fill="none" stroke="rgba(0,212,255,0.35)" stroke-width="0.8"/>
+        <line x1="11" y1="14" x2="17" y2="14" stroke="#00d4ff" stroke-width="1" opacity="0.7"/>
+        <line x1="14" y1="11" x2="14" y2="17" stroke="#00d4ff" stroke-width="1" opacity="0.7"/>
+        <circle cx="14" cy="14" r="1.8" fill="#00d4ff" opacity="0.85"/>
+        <circle cx="11" cy="14" r="0.9" fill="#00d4ff" opacity="0.45"/>
+        <circle cx="17" cy="14" r="0.9" fill="#00d4ff" opacity="0.45"/>
+      </svg>
+      <div>
+        <div class="tb-logo-text">AGENT<span>.OS</span></div>
+        <div class="tb-logo-sub">SECURED BY ABID ANWAR</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="tb-center">
+    <div class="trial-pill" id="trialPill">
+      <span class="trial-pill-text">TRIAL</span>
+      <span class="trial-pill-num" id="trialNum">10</span>
+      <span class="trial-pill-text">DAYS LEFT</span>
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <select class="lang-sel" id="langSel" onchange="setLang(this.value)">
+      <option value="en">🇬🇧 EN</option>
+      <option value="ur">🇵🇰 UR</option>
+      <option value="ar">🇸🇦 AR</option>
+      <option value="fr">🇫🇷 FR</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="zh">🇨🇳 ZH</option>
+    </select>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme"></button>
+    <div class="notif-wrap" onclick="showView('vault')">
+      <div class="notif-btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 1C4.8 1 3 2.8 3 5V9L1 11H13L11 9V5C11 2.8 9.2 1 7 1Z"/><path d="M5.5 11C5.5 11.8 6.2 12.5 7 12.5C7.8 12.5 8.5 11.8 8.5 11"/></svg>
+      </div>
+      <div class="notif-dot" id="notifDot"></div>
+    </div>
+    <div class="user-chip" onclick="showView('account')">
+      <div class="user-av" id="topAv">A</div>
+      <span class="user-chip-name" id="topName">ABID</span>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+
+  <div class="nav-sec">
+    <div class="nav-sec-lbl" data-i18n="nc">CORE</div>
+    <div class="nav-item active" onclick="showView('overview')" data-view="overview">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+      <span data-i18n="n1">OVERVIEW</span>
+    </div>
+    <div class="nav-item" onclick="showView('leads')" data-view="leads">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 1L13 4V7C13 10.5 10.5 13 7 14C3.5 13 1 10.5 1 7V4L7 1Z"/></svg>
+      <span data-i18n="n2">LEAD LEAKAGE</span>
+      <div class="nav-badge red" id="leadBadge">0</div>
+    </div>
+    <div class="nav-item" onclick="showView('clients')" data-view="clients">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="5" r="3"/><path d="M1 13C1 10.2 3.7 8 7 8C10.3 8 13 10.2 13 13"/></svg>
+      <span data-i18n="n3">CLIENTS</span>
+    </div>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-sec-lbl" data-i18n="ni">INTELLIGENCE</div>
+    <div class="nav-item" onclick="showView('aggregator')" data-view="aggregator">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="7" r="3"/><line x1="7" y1="1" x2="7" y2="4"/><line x1="7" y1="10" x2="7" y2="13"/><line x1="1" y1="7" x2="4" y2="7"/><line x1="10" y1="7" x2="13" y2="7"/></svg>
+      <span data-i18n="n4">AGGREGATOR</span>
+    </div>
+    <div class="nav-item" onclick="showView('vault')" data-view="vault">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 1L1 4V7C1 10.5 3.5 13.5 7 14.5C10.5 13.5 13 10.5 13 7V4L7 1Z"/></svg>
+      <span data-i18n="n5">FAULT VAULT</span>
+      <div class="nav-badge orange" id="vaultBadge">0</div>
+    </div>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-sec-lbl" data-i18n="na">ACCOUNT</div>
+    <div class="nav-item" onclick="showView('account')" data-view="account">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="4" r="3"/><path d="M1 13C1 9.8 3.7 8 7 8C10.3 8 13 9.8 13 13"/></svg>
+      <span data-i18n="n6">MY ACCOUNT</span>
+    </div>
+    <div class="nav-item" onclick="showView('help')" data-view="help">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="7" r="6"/><path d="M5.5 5C5.5 4.2 6.2 3.5 7 3.5C7.8 3.5 8.5 4.2 8.5 5C8.5 5.8 7 6.5 7 7.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.8" fill="currentColor" stroke="none"/></svg>
+      <span data-i18n="n7">HELP & GUIDE</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="signOut()">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 6H10M8 4L10 6L8 8" stroke-linecap="round"/><path d="M6 2H2V10H6"/></svg>
+      <span data-i18n="n8">SIGN OUT</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="content">
+
+    <!-- ===== OVERVIEW ===== -->
+    <div class="view active" id="view-overview">
+      <div class="view-hdr">
+        <div class="view-title">OPERATIONS <span>OVERVIEW</span></div>
+        <div class="view-sub" id="syncLabel">// LOADING LIVE DATA...</div>
+      </div>
+
+      <!-- Profile -->
+      <div class="profile-card">
+        <div class="prof-av" id="profAv" onclick="document.getElementById('avFile').click()">
+          <span id="profInitial">A</span>
+          <div class="av-hover">✏</div>
         </div>
-        <button onclick="toggleMobileSidebar(true)" class="p-2 text-slate-400 hover:text-white transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </header>
-
-    <aside id="sidebar-container" class="fixed inset-y-0 left-0 w-72 glass-shell border-r z-50 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:h-screen shrink-0">
-        
-        <div class="flex flex-col flex-1 overflow-y-auto">
-            <div class="p-6 flex items-center justify-between border-b border-inherit">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
-                    <span class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AGENT.OS</span>
-                </div>
-                <button onclick="toggleMobileSidebar(false)" class="lg:hidden text-slate-400 hover:text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <div class="p-6 border-b border-inherit bg-slate-950/20 flex items-center gap-4">
-                <div class="relative group shrink-0">
-                    <img id="profile-avatar" class="w-12 h-12 rounded-full object-cover border border-cyan-500/30 bg-slate-900 shadow-inner" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120" alt="Avatar">
-                    <label class="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity duration-200">
-                        <input type="file" id="avatar-uploader" accept="image/*" class="hidden" onchange="uploadProfileAvatarStream(event)">
-                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                    </label>
-                </div>
-                <div class="overflow-hidden">
-                    <h4 id="user-display-email" class="text-xs font-mono font-bold truncate text-slate-300">Loading Session...</h4>
-                    <span id="lbl-role" class="text-[10px] uppercase font-bold text-cyan-400/80 tracking-widest block mt-0.5">Ops Director</span>
-                </div>
-            </div>
-
-            <div class="p-4 space-y-3 border-b border-inherit">
-                <div>
-                    <label id="lbl-theme-heading" class="block text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Canvas Aesthetic Visual State</label>
-                    <button onclick="toggleVisualThemeState()" class="w-full card-surface rounded p-2 text-left text-xs font-medium flex items-center justify-between hover:border-cyan-500/40 transition-colors cursor-pointer">
-                        <span id="theme-status-label">Cyber Dark Mode</span>
-                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    </button>
-                </div>
-                <div>
-                    <label id="lbl-lang-heading" class="block text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">System Communication Core Language</label>
-                    <select id="language-dropdown" onchange="synchronizeSystemLanguage(this.value)" class="w-full card-surface rounded p-2 text-xs font-mono text-inherit focus:outline-none focus:border-cyan-500 transition-colors bg-transparent cursor-pointer">
-                        <option value="en" class="bg-slate-950">English (Global Matrix)</option>
-                        <option value="ar" class="bg-slate-950">العربية (Middle East Node)</option>
-                        <option value="es" class="bg-slate-950">Español (Castilian Core)</option>
-                        <option value="fr" class="bg-slate-950">Français (Euro Standard)</option>
-                        <option value="ur" class="bg-slate-950">اردو (Regional Stack)</option>
-                    </select>
-                </div>
-            </div>
-
-            <nav class="p-4 flex-1 space-y-1.5">
-                <button onclick="switchWorkspaceView('aggregator')" id="nav-aggregator" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/30 border border-cyan-800/30 font-bold transition-all cursor-pointer">
-                    <span id="lbl-nav-aggregator">Automation Aggregator</span>
-                </button>
-                <button onclick="switchWorkspaceView('vault')" id="nav-vault" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all cursor-pointer">
-                    <span id="lbl-nav-vault">Fail-Safe Data Vault</span>
-                </button>
-                <button onclick="switchWorkspaceView('guide')" id="nav-guide" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all cursor-pointer">
-                    <span id="lbl-nav-guide">Onboarding System Guide</span>
-                </button>
-            </nav>
+        <input type="file" id="avFile" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+        <div class="prof-info">
+          <div class="prof-name" id="profName">LOADING...</div>
+          <div class="prof-email" id="profEmail">—</div>
+          <div class="prof-role">AI OPERATIONS ARCHITECT</div>
         </div>
-
-        <div class="p-4 border-t border-inherit text-center bg-slate-950/40">
-            <div id="lbl-footer-signature" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-relaxed">
-                Secured Framework Node <br> Engineered by <span class="text-cyan-400 font-bold">ABID Anwar</span>
-            </div>
-            <button onclick="terminateSessionAuthentication()" id="lbl-terminate-btn" class="mt-2 w-full text-center text-[10px] font-mono text-red-400/80 hover:text-red-400 transition-colors py-1 hover:underline cursor-pointer">
-                [ Terminate Infrastructure Connection ]
-            </button>
+        <div class="prof-stats">
+          <div class="pst"><div class="pst-v" id="ps1">—</div><div class="pst-l">CLIENTS</div></div>
+          <div class="pst"><div class="pst-v" id="ps2">—</div><div class="pst-l">LEADS</div></div>
+          <div class="pst"><div class="pst-v" id="ps3">—</div><div class="pst-l">ALERTS</div></div>
         </div>
-    </aside>
+      </div>
 
-    <main class="flex-1 overflow-y-auto p-6 lg:p-10 pt-24 lg:pt-10 relative z-10 w-full">
-        <div id="paywall-injection-overlay" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-filter blur-md flex items-center justify-center p-6"></div>
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="sg-card c1"><div class="sg-val" id="sg1">—</div><div class="sg-lbl">ACTIVE CLIENTS</div></div>
+        <div class="sg-card c2"><div class="sg-val" id="sg2">—</div><div class="sg-lbl">LEADS AUTOMATED</div></div>
+        <div class="sg-card c3"><div class="sg-val" id="sg3">—</div><div class="sg-lbl">WORKFLOWS LIVE</div></div>
+        <div class="sg-card c4"><div class="sg-val" id="sg4">—</div><div class="sg-lbl">CRITICAL ALERTS</div></div>
+      </div>
 
-        <div id="active-viewport-view" class="w-full max-w-7xl mx-auto space-y-8">
-            <div id="loading-spinner-state" class="flex flex-col items-center justify-center py-24 space-y-3">
-                <div class="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
-                <p id="lbl-loading-text" class="text-xs font-mono text-slate-500 uppercase tracking-widest">Wired Authentication Handshake Ingestion Ongoing...</p>
-            </div>
+      <!-- Data Usage -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">DATA USAGE</div>
+          <div class="card-action" id="planLabel">FREE TRIAL</div>
         </div>
-    </main>
+        <div class="card-body">
+          <div class="du-grid">
+            <div class="du-item"><div class="du-row"><span class="du-name">Database</span><span class="du-val" id="duDB">— / 500 MB</span></div><div class="du-track"><div class="du-fill" id="duDBBar" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--green))"></div></div></div>
+            <div class="du-item"><div class="du-row"><span class="du-name">API Calls</span><span class="du-val" id="duAPI">— / 500k</span></div><div class="du-track"><div class="du-fill" id="duAPIBar" style="width:0%;background:linear-gradient(90deg,var(--orange),var(--gold))"></div></div></div>
+            <div class="du-item"><div class="du-row"><span class="du-name">File Storage</span><span class="du-val" id="duFile">— / 1 GB</span></div><div class="du-track"><div class="du-fill" id="duFileBar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div></div>
+            <div class="du-item"><div class="du-row"><span class="du-name">Bandwidth</span><span class="du-val" id="duBW">— / 5 GB</span></div><div class="du-track"><div class="du-fill" id="duBWBar" style="width:0%;background:linear-gradient(90deg,var(--cyan),#7b61ff)"></div></div></div>
+          </div>
+          <div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.2);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:1px;" id="duNote">Loading usage data...</div>
+        </div>
+      </div>
 
-    <script>
-        const SUPABASE_URL = "https://your-project-id.supabase.co";
-        const SUPABASE_ANON_KEY = "your-anon-public-key-string";
+      <!-- Leads -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">LEAD LEAKAGE MONITOR</div><div class="card-action" onclick="showView('leads')">VIEW ALL →</div></div>
+        <div id="leadsMini"><div class="empty"><div class="empty-ico">📡</div><div class="empty-txt">LOADING LEADS...</div></div></div>
+      </div>
 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let activeSessionUser = null;
-        let currentVisualTheme = 'dark';
-        let currentLanguage = 'en';
+      <!-- Automation Hub -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">AUTOMATION HUB</div><div class="card-action" onclick="showView('aggregator')">CONFIGURE →</div></div>
+        <div class="card-body">
+          <div class="plat-grid">
+            <div class="plat-card"><div class="plat-head"><span class="plat-name">n8n</span><span class="plat-badge ok">● LIVE</span></div><div id="n8nList"><div class="empty-txt" style="font-size:9px;padding:8px 0;">CONNECT n8n TO SEE WORKFLOWS</div></div></div>
+            <div class="plat-card"><div class="plat-head"><span class="plat-name">MAKE</span><span class="plat-badge ok">● LIVE</span></div><div id="makeList"><div class="empty-txt" style="font-size:9px;padding:8px 0;">CONNECT MAKE TO SEE SCENARIOS</div></div></div>
+            <div class="plat-card"><div class="plat-head"><span class="plat-name">ZAPIER</span><span class="plat-badge pending">◎ PENDING</span></div><div id="zapList"><div class="empty-txt" style="font-size:9px;padding:8px 0;">CONNECT ZAPIER TO SEE ZAPS</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        // Complete Language Dictionary Matrix
-        const dictionaryMatrix = {
-            en: {
-                role: "Ops Director",
-                themeHeading: "Canvas Aesthetic Visual State",
-                themeDark: "Cyber Dark Mode",
-                themeLight: "Premium Clean White Theme",
-                langHeading: "System Communication Core Language",
-                navAggregator: "Automation Aggregator",
-                navVault: "Fail-Safe Data Vault",
-                navGuide: "Onboarding System Guide",
-                signature: "Secured Framework Node <br> Engineered by <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
-                terminate: "[ Terminate Infrastructure Connection ]",
-                loadingText: "Wired Authentication Handshake Ingestion Ongoing..."
-            },
-            ar: {
-                role: "مدير العمليات",
-                themeHeading: "الحالة المرئية الجمالية للمصفوفة",
-                themeDark: "الوضع المظلم السيبراني",
-                themeLight: "الوضع الأبيض المميز",
-                langHeading: "لغة نظام الاتصال الأساسية",
-                navAggregator: "مجمع الأتمتة المركزي",
-                navVault: "خزنة البيانات الآمنة",
-                navGuide: "دليل تهيئة النظام",
-                signature: "عقدة إطار العمل الآمنة <br> تم التطوير بواسطة <span class='text-cyan-400 font-bold'>عابد أنوار</span>",
-                terminate: "[ إنهاء اتصال البنية التحتية ]",
-                loadingText: "جاري استيعاب مصافحة المصادقة السلكية..."
-            },
-            es: {
-                role: "Director de Operaciones",
-                themeHeading: "Estado Visual Estético del Canvas",
-                themeDark: "Modo Cyber Oscuro",
-                themeLight: "Tema Blanco Premium",
-                langHeading: "Idioma Central de Comunicación",
-                navAggregator: "Agregador de Automatización",
-                navVault: "Bóveda de Datos Segura",
-                navGuide: "Guía de Incorporación",
-                signature: "Nodo de Infraestructura Seguro <br> Diseñado por <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
-                terminate: "[ Terminar Conexión de Infraestructura ]",
-                loadingText: "Ingestión de Autenticación en Curso..."
-            },
-            fr: {
-                role: "Directeur des Opérations",
-                themeHeading: "État Visuel Esthétique du Canvas",
-                themeDark: "Mode Cyber Dark",
-                themeLight: "Thème Blanc Premium",
-                langHeading: "Langue Principale du Système",
-                navAggregator: "Agregateur d'Automatisation",
-                navVault: "Coffre-fort de Données",
-                navGuide: "Guide d'Intégration Système",
-                signature: "Nœud d'Infrastructure Sécurisé <br> Développé par <span class='text-cyan-400 font-bold'>ABID Anwar</span>",
-                terminate: "[ Terminer la Connexion d'Infrastructure ]",
-                loadingText: "Authentification Réseau en Cours..."
-            },
-            ur: {
-                role: "آپریشنز ڈائریکٹر",
-                themeHeading: "کینوس کی بصری حالت",
-                themeDark: "سائبر ڈارک موڈ",
-                themeLight: "پریمیم وائٹ تھیم",
-                langHeading: "سسٹم کی بنیادی زبان",
-                navAggregator: "آٹومیشن ایگریگیٹر",
-                navVault: "سیف ڈیٹا وولٹ",
-                navGuide: "سسٹم آن بورڈنگ گائیڈ",
-                signature: "محفوظ فریم ورک نوڈ <br> تیار کردہ <span class='text-cyan-400 font-bold'>عابد انوار</span>",
-                terminate: "[ انفراسٹرکچر کنکشن ختم کریں ]",
-                loadingText: "سیکیورٹی توثیق کا عمل جاری ہے..."
-            }
-        };
+    <!-- ===== LEADS ===== -->
+    <div class="view" id="view-leads">
+      <div class="view-hdr"><div class="view-title">LEAD <span>LEAKAGE</span> CONTROL</div><div class="view-sub">// REAL-TIME — NO LEAD DIES SILENTLY</div></div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">ALL LEADS</div></div>
+        <div id="leadsAll"><div class="empty"><div class="empty-ico">📡</div><div class="empty-txt">LOADING...</div></div></div>
+      </div>
+    </div>
 
-        function applyLanguageTranslations(lang) {
-            currentLanguage = lang;
-            const text = dictionaryMatrix[lang] || dictionaryMatrix['en'];
-            
-            document.getElementById('lbl-role').innerText = text.role;
-            document.getElementById('lbl-theme-heading').innerText = text.themeHeading;
-            document.getElementById('lbl-lang-heading').innerText = text.langHeading;
-            document.getElementById('lbl-nav-aggregator').innerText = text.navAggregator;
-            document.getElementById('lbl-nav-vault').innerText = text.navVault;
-            document.getElementById('lbl-nav-guide').innerText = text.navGuide;
-            document.getElementById('lbl-footer-signature').innerHTML = text.signature;
-            document.getElementById('lbl-terminate-btn').innerText = text.terminate;
-            
-            const loadingText = document.getElementById('lbl-loading-text');
-            if (loadingText) loadingText.innerText = text.loadingText;
+    <!-- ===== CLIENTS ===== -->
+    <div class="view" id="view-clients">
+      <div class="view-hdr"><div class="view-title">CLIENT <span>MANAGEMENT</span></div><div class="view-sub">// YOUR REAL CLIENT ROSTER</div></div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">ALL CLIENTS</div><div class="card-action">+ ADD CLIENT</div></div>
+        <div id="clientsList"><div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">NO CLIENTS YET</div></div></div>
+      </div>
+    </div>
 
-            // Maintain correct theme sub-label text on language shifts
-            const label = document.getElementById('theme-status-label');
-            if (label) label.innerText = (currentVisualTheme === 'dark') ? text.themeDark : text.themeLight;
+    <!-- ===== AGGREGATOR ===== -->
+    <div class="view" id="view-aggregator">
+      <div class="view-hdr"><div class="view-title">PLATFORM <span>AGGREGATOR</span></div><div class="view-sub">// n8n · MAKE · ZAPIER</div></div>
+      <div class="card"><div class="card-body" style="text-align:center;padding:40px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:2px;margin-bottom:14px;">FULL AGGREGATOR MODULE</div>
+        <a href="aggregator.html" style="display:inline-block;padding:12px 28px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;border-radius:8px;text-decoration:none;">OPEN AGGREGATOR →</a>
+      </div></div>
+    </div>
 
-            // Handle RTL layouts dynamically for Arabic/Urdu
-            const sidebar = document.getElementById('sidebar-container');
-            if (lang === 'ar' || lang === 'ur') {
-                document.body.setAttribute('dir', 'rtl');
-                sidebar.classList.remove('border-r');
-                sidebar.classList.add('border-l');
-            } else {
-                document.body.removeAttribute('dir');
-                sidebar.classList.remove('border-l');
-                sidebar.classList.add('border-r');
-            }
-        }
+    <!-- ===== VAULT ===== -->
+    <div class="view" id="view-vault">
+      <div class="view-hdr"><div class="view-title">FAULT <span>VAULT</span></div><div class="view-sub">// DEAD LETTER RECOVERY</div></div>
+      <div class="card"><div class="card-body" style="text-align:center;padding:40px;">
+        <a href="fault-vault.html" style="display:inline-block;padding:12px 28px;background:rgba(255,51,85,0.08);border:1px solid rgba(255,51,85,0.2);color:var(--red);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;border-radius:8px;text-decoration:none;">OPEN FAULT VAULT →</a>
+      </div></div>
+    </div>
 
-        function toggleMobileSidebar(openState) {
-            const sidebar = document.getElementById('sidebar-container');
-            if (openState) sidebar.classList.remove('-translate-x-full');
-            else sidebar.classList.add('-translate-x-full');
-        }
+    <!-- ===== ACCOUNT ===== -->
+    <div class="view" id="view-account">
+      <div class="view-hdr"><div class="view-title">MY <span>ACCOUNT</span></div><div class="view-sub">// PROFILE · SETTINGS · PLAN</div></div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">PROFILE SETTINGS</div></div>
+        <div class="card-body" id="accBody"><div class="empty"><div class="empty-txt">LOADING...</div></div></div>
+      </div>
+    </div>
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) { window.location.href = "index.html"; return; }
-            activeSessionUser = session.user;
-            document.getElementById('user-display-email').innerText = activeSessionUser.email;
-            await syncProfileMetadataFromDatabase();
-        });
+    <!-- ===== HELP ===== -->
+    <div class="view" id="view-help">
+      <div class="view-hdr"><div class="view-title">HELP & <span>GUIDE</span></div><div class="view-sub">// HOW TO USE AGENT.OS</div></div>
+      <div class="help-grid">
+        <div class="help-card"><div class="help-num">01</div><div class="help-title">ADD YOUR FIRST CLIENT</div><div class="help-text">Go to Clients → "+ ADD CLIENT" → enter name, industry, webhook URL. Data is isolated to your account via RLS.</div></div>
+        <div class="help-card"><div class="help-num">02</div><div class="help-title">CONNECT PLATFORMS</div><div class="help-text">Go to Aggregator → enter n8n URL, Make webhook, or Zapier API key. All keys are AES-256 encrypted before storage.</div></div>
+        <div class="help-card"><div class="help-num">03</div><div class="help-title">MONITOR LEAD LEAKAGE</div><div class="help-text">Leads with no response within threshold are flagged CRITICAL. Assign them immediately to prevent revenue loss.</div></div>
+        <div class="help-card"><div class="help-num">04</div><div class="help-title">FAULT VAULT RECOVERY</div><div class="help-text">When platforms error, failed payloads are held — never lost. ONE-CLICK RE-SYNC pushes them back into active stream.</div></div>
+        <div class="help-card"><div class="help-num">05</div><div class="help-title">TRIAL & UPGRADE</div><div class="help-text">10-day free trial — all features unlocked. When trial expires, message on LinkedIn to upgrade and restore access.</div></div>
+        <div class="help-card"><div class="help-num">06</div><div class="help-title">YOUR DATA IS ALWAYS SAFE</div><div class="help-text">Even after trial ends, your data stays encrypted in your isolated partition. It is never deleted. Upgrade anytime to continue.</div></div>
+      </div>
+    </div>
 
-        async function syncProfileMetadataFromDatabase() {
-            const { data: profile } = await supabaseClient.from('agency_profiles').select('*').eq('id', activeSessionUser.id).single();
-            if (profile) {
-                if (profile.trial_days_remaining <= 0) { enforceTrialHardLockoutState(); return; }
-                if (profile.avatar_url) document.getElementById('profile-avatar').src = profile.avatar_url;
-                if (profile.dashboard_theme) setVisualThemeState(profile.dashboard_theme);
-                if (profile.system_language) {
-                    document.getElementById('language-dropdown').value = profile.system_language;
-                    applyLanguageTranslations(profile.system_language);
-                } else {
-                    applyLanguageTranslations('en');
-                }
-                initializeActiveWorkspaceModules();
-            } else {
-                applyLanguageTranslations('en');
-                initializeActiveWorkspaceModules();
-            }
-        }
+  </div>
+</main>
 
-        function toggleVisualThemeState() {
-            const targetedTheme = (currentVisualTheme === 'dark') ? 'light' : 'dark';
-            setVisualThemeState(targetedTheme);
-            saveVisualThemeToDatabaseState(targetedTheme);
-        }
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div>AGENT<span>.OS</span> v2.4 · <span>SUPABASE</span> LIVE · RLS LOCKED</div>
+  <div>SECURED BY <span>ABID ANWAR</span></div>
+</div>
 
-        function setVisualThemeState(theme) {
-            currentVisualTheme = theme;
-            document.documentElement.setAttribute('data-theme', theme);
-            const text = dictionaryMatrix[currentLanguage] || dictionaryMatrix['en'];
-            const label = document.getElementById('theme-status-label');
-            if (label) label.innerText = (theme === 'dark') ? text.themeDark : text.themeLight;
-        }
+<script>
+// ===== SUPABASE =====
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function saveVisualThemeToDatabaseState(themeValue) {
-            if (!activeSessionUser) return;
-            await supabaseClient.from('agency_profiles').update({ dashboard_theme: themeValue }).eq('id', activeSessionUser.id);
-        }
+let user = null, profile = null;
 
-        async function synchronizeSystemLanguage(langValue) {
-            applyLanguageTranslations(langValue);
-            if (!activeSessionUser) return;
-            await supabaseClient.from('agency_profiles').update({ system_language: langValue }).eq('id', activeSessionUser.id);
-        }
+// ===== BOOT =====
+async function init() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { window.location.href='index.html'; return; }
+  user = session.user;
+  await loadProfile();
+  await loadData();
+  setupRealtime();
+  document.getElementById('syncLabel').textContent = `// LAST SYNC: ${new Date().toLocaleTimeString()}`;
+}
 
-        async function uploadProfileAvatarStream(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const extension = file.name.split('.').pop();
-            const storagePathName = `${activeSessionUser.id}/avatar_matrix_${Date.now()}.${extension}`;
+// ===== PROFILE =====
+async function loadProfile() {
+  const { data } = await sb.from('agency_profiles').select('*').eq('user_id', user.id).single();
+  if (!data) return;
+  profile = data;
+  const name = data.full_name || user.email.split('@')[0];
+  const initials = name.trim().split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
 
-            const { error: storageError } = await supabaseClient.storage.from('avatars').upload(storagePathName, file, { upsert: true });
-            if (storageError) { alert(`Avatar Storage Request Rejected: ${storageError.message}`); return; }
+  document.getElementById('profName').textContent = name.toUpperCase();
+  document.getElementById('profEmail').textContent = user.email;
+  document.getElementById('profInitial').textContent = initials;
+  document.getElementById('topName').textContent = name.split(' ')[0].toUpperCase();
+  document.getElementById('topAv').textContent = initials;
 
-            const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(storagePathName);
-            const { error: dbUpdateError } = await supabaseClient.from('agency_profiles').update({ avatar_url: publicUrl }).eq('id', activeSessionUser.id);
-            if (!dbUpdateError) document.getElementById('profile-avatar').src = publicUrl;
-        }
+  const days = data.trial_days_remaining ?? 10;
+  document.getElementById('trialNum').textContent = days;
+  if (days <= 3) document.getElementById('trialPill').classList.add('expiring');
+  if (days <= 0) { window.location.href = 'paywall.html'; return; }
 
-        function enforceTrialHardLockoutState() {
-            const overlay = document.getElementById('paywall-injection-overlay');
-            overlay.classList.remove('hidden');
-            overlay.innerHTML = `
-                <div class="glass-shell p-8 max-w-lg rounded-2xl text-center border-t-4 border-red-500 shadow-2xl relative bg-slate-950">
-                    <div class="w-12 h-12 rounded-full bg-red-950/50 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    </div>
-                    <h2 class="text-2xl font-black tracking-wider text-white uppercase">Sandbox Runtime Expired</h2>
-                    <p class="text-xs text-slate-400 mt-2 leading-relaxed">Your 10-day testing deployment loop has successfully timed out.</p>
-                    <a href="https://www.linkedin.com/in/abid" target="_blank" class="block w-full text-center bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-mono text-xs uppercase font-bold tracking-widest py-3.5 rounded shadow-lg transition-all mt-4">Contact Architect on LinkedIn to Unlock Production</a>
-                </div>
-            `;
-        }
+  if (data.avatar_url) setAvatarImg(data.avatar_url);
+  if (data.dashboard_theme) document.documentElement.setAttribute('data-theme', data.dashboard_theme);
+  if (data.system_language) { document.getElementById('langSel').value = data.system_language; applyLang(data.system_language); }
 
-        function switchWorkspaceView(viewId) {
-            ['aggregator', 'vault', 'guide'].forEach(id => {
-                const navBtn = document.getElementById(`nav-${id}`);
-                if (navBtn) {
-                    if (id === viewId) navBtn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/30 border border-cyan-800/30 font-bold transition-all";
-                    else navBtn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 transition-all";
-                }
-            });
-            if (viewId === 'aggregator' && window.renderAutomationAggregatorView) window.renderAutomationAggregatorView();
-            else if (viewId === 'vault' && window.renderFailSafeVaultView) window.renderFailSafeVaultView();
-            else if (viewId === 'guide' && window.renderSystemOnboardingGuideView) window.renderSystemOnboardingGuideView();
-            toggleMobileSidebar(false);
-        }
+  buildAccView(data);
+  renderUsage(data);
+}
 
-        function initializeActiveWorkspaceModules() {
-            const loadingPlaceholder = document.getElementById('loading-spinner-state');
-            if (loadingPlaceholder) loadingPlaceholder.remove();
-            if (window.renderAutomationAggregatorView) window.renderAutomationAggregatorView();
-        }
+function setAvatarImg(url) {
+  const av = document.getElementById('profAv');
+  av.innerHTML = `<img src="${url}" alt="avatar"><div class="av-hover">✏</div>`;
+  const tap = document.getElementById('topAv');
+  tap.innerHTML = `<img src="${url}" alt="">`;
+}
 
-        async function terminateSessionAuthentication() { await supabaseClient.auth.signOut(); window.location.href = "index.html"; }
-    </script>
+// ===== LOAD DATA =====
+async function loadData() {
+  if (!profile) return;
+  const [cRes, lRes, vRes] = await Promise.all([
+    sb.from('clients').select('*').eq('agency_id', profile.id),
+    sb.from('leads').select('*').order('created_at',{ascending:false}).limit(50),
+    sb.from('fail_safe_vault').select('*').eq('status','held')
+  ]);
+  const clients = cRes.data||[], leads = lRes.data||[], vault = vRes.data||[];
+  const crit = leads.filter(l=>l.priority==='critical').length;
+
+  // Stats
+  document.getElementById('sg1').textContent = clients.length||'0';
+  document.getElementById('sg2').textContent = leads.filter(l=>l.status==='converted').length||'0';
+  document.getElementById('sg3').textContent = '—';
+  document.getElementById('sg4').textContent = crit||'0';
+  document.getElementById('ps1').textContent = clients.length;
+  document.getElementById('ps2').textContent = leads.length;
+  document.getElementById('ps3').textContent = crit||'0';
+  document.getElementById('leadBadge').textContent = crit;
+  document.getElementById('vaultBadge').textContent = vault.length;
+  document.getElementById('notifDot').style.display = vault.length > 0 ? 'block' : 'none';
+
+  renderLeads(leads.slice(0,5), 'leadsMini');
+  renderLeads(leads, 'leadsAll');
+  renderClients(clients);
+}
+
+// ===== RENDER LEADS =====
+function renderLeads(leads, id) {
+  const el = document.getElementById(id);
+  if (!leads.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">📡</div><div class="empty-txt">NO LEADS YET — CONNECT YOUR FIRST PLATFORM</div></div>`;
+    return;
+  }
+  let h = `<div class="lead-row hdr"><div>LEAD</div><div>SOURCE</div><div>TIME</div><div>PRIORITY</div><div>ACTION</div></div>`;
+  leads.forEach(l => {
+    const name = l.payload?.lead || l.name || 'Unknown Lead';
+    h += `<div class="lead-row">
+      <div><div class="l-name">${name}</div><div class="l-sub">${l.payload?.intent||''}</div></div>
+      <div class="l-src">${l.source||'—'}</div>
+      <div class="l-time">${new Date(l.created_at).toLocaleTimeString()}</div>
+      <div><span class="priority-tag ${l.priority||'normal'}">${(l.priority||'normal').toUpperCase()}</span></div>
+      <button class="act-btn" onclick="assignLead('${l.id}')">ASSIGN</button>
+    </div>`;
+  });
+  el.innerHTML = h;
+}
+
+async function assignLead(id) {
+  await sb.from('leads').update({status:'assigned'}).eq('id',id);
+  await loadData();
+}
+
+// ===== RENDER CLIENTS =====
+function renderClients(clients) {
+  const el = document.getElementById('clientsList');
+  if (!clients.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">NO CLIENTS YET — ADD YOUR FIRST CLIENT</div></div>`;
+    return;
+  }
+  el.innerHTML = clients.map(c => {
+    const ini = c.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="client-row">
+      <div class="cl-info">
+        <div class="cl-av" style="background:rgba(0,212,255,0.1);color:var(--cyan)">${ini}</div>
+        <div><div class="cl-name">${c.name}</div><div class="cl-industry">${c.industry||'—'}</div></div>
+      </div>
+      <div class="status-tag ${c.status||'active'}"><div class="s-dot"></div>${(c.status||'ACTIVE').toUpperCase()}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== DATA USAGE =====
+function renderUsage(p) {
+  const days = p.trial_days_remaining ?? 10;
+  const used = 10 - days;
+  const db = Math.round(used * 12), api = Math.round(used * 4.2), file = Math.round(used * 5), bw = Math.round(used * 0.2 * 10)/10;
+  document.getElementById('duDB').textContent = `${db} MB / 500 MB`;
+  document.getElementById('duAPI').textContent = `${api}k / 500k`;
+  document.getElementById('duFile').textContent = `${file} MB / 1 GB`;
+  document.getElementById('duBW').textContent = `${bw} GB / 5 GB`;
+  document.getElementById('duNote').textContent = `Plan: FREE TRIAL · ${days} days remaining · Data secured even after expiry`;
+  setTimeout(() => {
+    document.getElementById('duDBBar').style.width = Math.min((db/500)*100,100)+'%';
+    document.getElementById('duAPIBar').style.width = Math.min((api/500)*100,100)+'%';
+    document.getElementById('duFileBar').style.width = Math.min((file/1024)*100,100)+'%';
+    document.getElementById('duBWBar').style.width = Math.min((bw/5)*100,100)+'%';
+  }, 400);
+}
+
+// ===== ACCOUNT VIEW =====
+function buildAccView(p) {
+  document.getElementById('accBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div class="acc-field"><label class="acc-label">FULL NAME</label><input class="acc-input" id="accName" value="${p.full_name||''}"></div>
+      <div class="acc-field"><label class="acc-label">EMAIL</label><input class="acc-input" value="${user.email}" disabled></div>
+    </div>
+    <button class="acc-btn" onclick="saveProfile()">SAVE CHANGES →</button>
+    <div style="margin-top:14px;padding:12px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.1);border-radius:8px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px;">TRIAL STATUS</div>
+      <div style="font-size:12px;color:var(--text2);">Days Remaining: <strong style="color:var(--cyan)">${p.trial_days_remaining ?? 10} / 10</strong></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;">Your data stays encrypted and secure even after trial expiry.</div>
+    </div>`;
+}
+
+async function saveProfile() {
+  const name = document.getElementById('accName').value.trim();
+  if (!name||!profile) return;
+  await sb.from('agency_profiles').update({full_name:name}).eq('id',profile.id);
+  document.getElementById('profName').textContent = name.toUpperCase();
+  document.getElementById('topName').textContent = name.split(' ')[0].toUpperCase();
+}
+
+// ===== AVATAR UPLOAD =====
+async function uploadAvatar(input) {
+  if (!input.files?.[0]) return;
+  const file = input.files[0];
+  const path = `avatars/${user.id}.${file.name.split('.').pop()}`;
+  const { error } = await sb.storage.from('avatars').upload(path, file, {upsert:true});
+  if (!error) {
+    const { data:u } = sb.storage.from('avatars').getPublicUrl(path);
+    await sb.from('agency_profiles').update({avatar_url:u.publicUrl}).eq('user_id',user.id);
+    setAvatarImg(u.publicUrl);
+  }
+}
+
+// ===== REALTIME =====
+function setupRealtime() {
+  sb.channel('rt-leads').on('postgres_changes',{event:'*',schema:'public',table:'leads'},loadData).subscribe();
+  sb.channel('rt-vault').on('postgres_changes',{event:'*',schema:'public',table:'fail_safe_vault'},loadData).subscribe();
+}
+
+// ===== NAVIGATION =====
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const v = document.getElementById(`view-${name}`);
+  const n = document.querySelector(`.nav-item[data-view="${name}"]`);
+  if (v) v.classList.add('active');
+  if (n) n.classList.add('active');
+  if (window.innerWidth <= 900) closeSidebar();
+  window.scrollTo(0,0);
+}
+
+// ===== SIDEBAR =====
+function toggleSidebar() {
+  const sb2 = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const hm = document.getElementById('hamburger');
+  const isOpen = sb2.classList.contains('open');
+  sb2.classList.toggle('open', !isOpen);
+  ov.classList.toggle('open', !isOpen);
+  hm.classList.toggle('open', !isOpen);
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+// ===== THEME =====
+async function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  if (profile) await sb.from('agency_profiles').update({dashboard_theme:t}).eq('id',profile.id);
+}
+
+// ===== LANGUAGE =====
+const T = {
+  en:{nc:'CORE',n1:'OVERVIEW',n2:'LEAD LEAKAGE',n3:'CLIENTS',ni:'INTELLIGENCE',n4:'AGGREGATOR',n5:'FAULT VAULT',na:'ACCOUNT',n6:'MY ACCOUNT',n7:'HELP & GUIDE',n8:'SIGN OUT'},
+  ur:{nc:'بنیادی',n1:'خلاصہ',n2:'لیڈ لیکیج',n3:'کلائنٹس',ni:'انٹیلیجنس',n4:'ایگریگیٹر',n5:'فالٹ والٹ',na:'اکاؤنٹ',n6:'میرا اکاؤنٹ',n7:'مدد',n8:'لاگ آؤٹ'},
+  ar:{nc:'الأساسي',n1:'نظرة عامة',n2:'تسريب',n3:'العملاء',ni:'الذكاء',n4:'المجمع',n5:'الخزنة',na:'الحساب',n6:'حسابي',n7:'المساعدة',n8:'خروج'},
+  fr:{nc:'NOYAU',n1:'APERÇU',n2:'FUITES',n3:'CLIENTS',ni:'INTELLIGENCE',n4:'AGRÉGATEUR',n5:'COFFRE',na:'COMPTE',n6:'MON COMPTE',n7:'AIDE',n8:'DÉCONNEXION'},
+  de:{nc:'KERN',n1:'ÜBERSICHT',n2:'LECKS',n3:'KUNDEN',ni:'INTELLIGENZ',n4:'AGGREGATOR',n5:'ARCHIV',na:'KONTO',n6:'MEIN KONTO',n7:'HILFE',n8:'ABMELDEN'},
+  es:{nc:'NÚCLEO',n1:'RESUMEN',n2:'FUGAS',n3:'CLIENTES',ni:'INTELIGENCIA',n4:'AGREGADOR',n5:'BÓVEDA',na:'CUENTA',n6:'MI CUENTA',n7:'AYUDA',n8:'SALIR'},
+  zh:{nc:'核心',n1:'概览',n2:'线索泄漏',n3:'客户',ni:'智能',n4:'聚合器',n5:'故障库',na:'账户',n6:'我的账户',n7:'帮助',n8:'退出'},
+};
+function applyLang(lang) {
+  const t = T[lang]||T.en;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ if(t[el.dataset.i18n]) el.textContent=t[el.dataset.i18n]; });
+  document.documentElement.setAttribute('dir',(lang==='ar'||lang==='ur')?'rtl':'ltr');
+}
+async function setLang(lang) {
+  applyLang(lang);
+  if (profile) await sb.from('agency_profiles').update({system_language:lang}).eq('id',profile.id);
+}
+
+// ===== SIGN OUT =====
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+init();
+</script>
 </body>
 </html>
+     
