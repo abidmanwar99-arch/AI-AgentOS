@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT.OS — Aggregator</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#020810;--bg2:#050f1c;--card:#080e1a;--card2:#0d1626;
+  --cyan:#00d4ff;--green:#00ff88;--orange:#ff6b35;--red:#ff3355;--gold:#ffd700;
+  --text:#e8f4f8;--text2:#6a8fa8;--dim:#1a3a4e;--border:#0d2235;
+  --grid:rgba(0,212,255,0.035);
+}
+[data-theme="light"]{--bg:#f0f4f8;--bg2:#e2eaf2;--card:#fff;--card2:#f7fafc;--text:#0a1628;--text2:#4a6080;--dim:#c0cfe0;--border:#d0dcea;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;padding:24px;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;}
+
+.page-header{margin-bottom:24px;position:relative;z-index:1;animation:fadeIn 0.5s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.page-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;letter-spacing:2px;}
+.page-title span{color:var(--cyan);}
+.page-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:2px;margin-top:4px;}
+
+/* PLATFORM CARDS */
+.platforms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;position:relative;z-index:1;}
+.platform-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.25s;position:relative;overflow:hidden;}
+.platform-card:hover{transform:translateY(-3px);border-color:var(--cyan);box-shadow:0 8px 32px rgba(0,212,255,0.08);}
+.platform-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.platform-card.n8n::before{background:linear-gradient(90deg,transparent,#ff6b35,transparent);}
+.platform-card.make::before{background:linear-gradient(90deg,transparent,#7b61ff,transparent);}
+.platform-card.zapier::before{background:linear-gradient(90deg,transparent,#ff4a00,transparent);}
+
+.platform-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.platform-logo{display:flex;align-items:center;gap:10px;}
+.platform-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.platform-name{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:1px;}
+.conn-badge{font-family:'JetBrains Mono',monospace;font-size:8px;padding:3px 8px;border-radius:8px;letter-spacing:1px;}
+.conn-badge.connected{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.2);}
+.conn-badge.pending{background:rgba(255,215,0,0.1);color:var(--gold);border:1px solid rgba(255,215,0,0.2);}
+
+.input-group{margin-bottom:12px;}
+.input-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:5px;}
+.input-field{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;padding:8px 12px;border-radius:6px;outline:none;transition:border-color 0.2s;}
+.input-field:focus{border-color:var(--cyan);}
+.input-field::placeholder{color:var(--dim);}
+
+.btn-save{width:100%;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;padding:8px;border-radius:6px;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+.btn-save:hover{background:rgba(0,212,255,0.15);box-shadow:0 0 12px rgba(0,212,255,0.15);}
+
+.platform-stats{display:flex;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.pstat-mini{flex:1;text-align:center;}
+.pstat-mini-val{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--cyan);}
+.pstat-mini-lbl{font-size:9px;color:var(--text2);letter-spacing:1px;}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:24px;position:relative;z-index:1;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.panel-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;font-weight:700;}
+.panel-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--cyan);letter-spacing:1px;cursor:pointer;}
+.panel-body{padding:18px;}
+
+/* CHART */
+.chart-wrap{position:relative;height:160px;display:flex;align-items:flex-end;gap:6px;padding:0 4px;}
+.chart-bar{flex:1;border-radius:3px 3px 0 0;position:relative;transition:all 0.3s;cursor:pointer;}
+.chart-bar:hover{filter:brightness(1.3);}
+.chart-bar.leads{background:linear-gradient(to top,rgba(0,212,255,0.3),rgba(0,212,255,0.7));}
+.chart-bar.automated{background:linear-gradient(to top,rgba(0,255,136,0.3),rgba(0,255,136,0.7));}
+.chart-tooltip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s;color:var(--cyan);}
+.chart-bar:hover .chart-tooltip{opacity:1;}
+.chart-labels{display:flex;gap:6px;padding:6px 4px 0;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text2);}
+.chart-labels span{flex:1;text-align:center;}
+.chart-legend{display:flex;gap:16px;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);}
+.legend-dot{width:8px;height:8px;border-radius:2px;}
+
+/* STORAGE */
+.storage-item{margin-bottom:14px;}
+.storage-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.storage-name{font-size:12px;font-weight:600;}
+.storage-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);}
+.storage-track{background:var(--border);border-radius:4px;height:6px;overflow:hidden;}
+.storage-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+
+/* LEAD SCORE */
+.score-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;position:relative;z-index:1;}
+.score-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;transition:all 0.2s;}
+.score-card:hover{border-color:var(--cyan);}
+.score-val{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;margin-bottom:4px;}
+.score-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:1px;}
+.score-trend{font-size:11px;margin-top:4px;}
+.score-trend.up{color:var(--green);}
+.score-trend.down{color:var(--red);}
+
+@media(max-width:900px){.platforms-grid{grid-template-columns:1fr;}.analytics-grid{grid-template-columns:1fr;}.score-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.score-grid{grid-template-columns:1fr;}}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">PLATFORM <span>AGGREGATOR</span></div>
+  <div class="page-sub">// n8n · MAKE.COM · ZAPIER — UNIFIED CONTROL MATRIX</div>
+</div>
+
+<!-- PLATFORM CARDS -->
+<div class="platforms-grid">
+
+  <!-- n8n -->
+  <div class="platform-card n8n">
+    <div class="platform-header">
+      <div class="platform-logo">
+        <div class="platform-icon" style="background:rgba(255,107,53,0.1)">⚙️</div>
+        <div class="platform-name">n8n</div>
+      </div>
+      <div class="conn-badge connected">● CONNECTED</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">INSTANCE URL</div>
+      <input class="input-field" type="text" placeholder="https://your-n8n.instance.com" id="n8nUrl">
+    </div>
+    <div class="input-group">
+      <div class="input-label">API KEY</div>
+      <input class="input-field" type="password" placeholder="n8n_api_••••••••••••" id="n8nKey">
+    </div>
+    <button class="btn-save" onclick="savePlatform('n8n')">SAVE & VALIDATE →</button>
+    <div class="platform-stats">
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--orange)">28</div><div class="pstat-mini-lbl">WORKFLOWS</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--green)">99.2%</div><div class="pstat-mini-lbl">UPTIME</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--cyan)">4.2k</div><div class="pstat-mini-lbl">EXECUTIONS</div></div>
+    </div>
+  </div>
+
+  <!-- Make.com -->
+  <div class="platform-card make">
+    <div class="platform-header">
+      <div class="platform-logo">
+        <div class="platform-icon" style="background:rgba(123,97,255,0.1)">🔮</div>
+        <div class="platform-name">MAKE</div>
+      </div>
+      <div class="conn-badge connected">● CONNECTED</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">WEBHOOK URL</div>
+      <input class="input-field" type="text" placeholder="https://hook.make.com/••••" id="makeUrl">
+    </div>
+    <div class="input-group">
+      <div class="input-label">VALIDATION KEY</div>
+      <input class="input-field" type="password" placeholder="mk_••••••••••••••••" id="makeKey">
+    </div>
+    <button class="btn-save" onclick="savePlatform('make')">SAVE & VALIDATE →</button>
+    <div class="platform-stats">
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:#7b61ff">18</div><div class="pstat-mini-lbl">SCENARIOS</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--green)">98.7%</div><div class="pstat-mini-lbl">SUCCESS</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--cyan)">1.8k</div><div class="pstat-mini-lbl">OPS/MONTH</div></div>
+    </div>
+  </div>
+
+  <!-- Zapier -->
+  <div class="platform-card zapier">
+    <div class="platform-header">
+      <div class="platform-logo">
+        <div class="platform-icon" style="background:rgba(255,74,0,0.1)">⚡</div>
+        <div class="platform-name">ZAPIER</div>
+      </div>
+      <div class="conn-badge pending">◎ PENDING</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">WEBHOOK URL</div>
+      <input class="input-field" type="text" placeholder="https://hooks.zapier.com/••••" id="zapierUrl">
+    </div>
+    <div class="input-group">
+      <div class="input-label">API TOKEN</div>
+      <input class="input-field" type="password" placeholder="zap_••••••••••••••••" id="zapierKey">
+    </div>
+    <button class="btn-save" onclick="savePlatform('zapier')">CONNECT →</button>
+    <div class="platform-stats">
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:#ff4a00">15</div><div class="pstat-mini-lbl">ZAPS</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--gold)">—</div><div class="pstat-mini-lbl">UPTIME</div></div>
+      <div class="pstat-mini"><div class="pstat-mini-val" style="color:var(--cyan)">—</div><div class="pstat-mini-lbl">TASKS</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ANALYTICS -->
+<div class="analytics-grid">
+
+  <!-- ACTIVITY CHART -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">PIPELINE ACTIVITY</div>
+      <div class="panel-sub">LAST 8 WEEKS</div>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" id="chart">
+        <!-- Bars injected by JS -->
+      </div>
+      <div class="chart-labels" id="chartLabels"></div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,212,255,0.6)"></div>Total Leads</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,255,136,0.6)"></div>Automated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORAGE -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">STORAGE TELEMETRY</div>
+      <div class="panel-sub">SUPABASE</div>
+    </div>
+    <div class="panel-body">
+      <div class="storage-item">
+        <div class="storage-header"><div class="storage-name">Database</div><div class="storage-val">124 MB / 500 MB</div></div>
+        <div class="storage-track"><div class="storage-fill" style="width:25%;background:linear-gradient(90deg,var(--cyan),var(--green));"></div></div>
+      </div>
+      <div class="storage-item">
+        <div class="storage-header"><div class="storage-name">File Storage</div><div class="storage-val">48 MB / 1 GB</div></div>
+        <div class="storage-track"><div class="storage-fill" style="width:5%;background:linear-gradient(90deg,var(--green),var(--cyan));"></div></div>
+      </div>
+      <div class="storage-item">
+        <div class="storage-header"><div class="storage-name">API Calls</div><div class="storage-val">42k / 500k</div></div>
+        <div class="storage-track"><div class="storage-fill" style="width:8%;background:linear-gradient(90deg,var(--orange),var(--gold));"></div></div>
+      </div>
+      <div class="storage-item">
+        <div class="storage-header"><div class="storage-name">Bandwidth</div><div class="storage-val">2.1 GB / 5 GB</div></div>
+        <div class="storage-track"><div class="storage-fill" style="width:42%;background:linear-gradient(90deg,var(--cyan),#7b61ff);"></div></div>
+      </div>
+      <div style="margin-top:14px;padding:10px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.1);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--green);letter-spacing:1px;">
+        ✓ FREE TIER — UPGRADE WHEN 80% REACHED
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LEAD SCORES -->
+<div style="margin-bottom:8px;position:relative;z-index:1;">
+  <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;margin-bottom:12px;">LEAD SCORE <span style="color:var(--cyan)">TRENDS</span></div>
+  <div class="score-grid">
+    <div class="score-card"><div class="score-val" style="color:var(--cyan)">94%</div><div class="score-lbl">CAPTURE RATE</div><div class="score-trend up">↑ +2.3% this week</div></div>
+    <div class="score-card"><div class="score-val" style="color:var(--green)">847</div><div class="score-lbl">TOTAL AUTOMATED</div><div class="score-trend up">↑ +41 today</div></div>
+    <div class="score-card"><div class="score-val" style="color:var(--orange)">4.2s</div><div class="score-lbl">AVG RESPONSE TIME</div><div class="score-trend up">↑ Improved 1.1s</div></div>
+    <div class="score-card"><div class="score-val" style="color:var(--red)">3</div><div class="score-lbl">CRITICAL PENDING</div><div class="score-trend down">⚠ Action required</div></div>
+  </div>
+</div>
+
+<script>
+// CHART
+const data = [
+  {week:'W1',leads:42,auto:35},{week:'W2',leads:58,auto:51},{week:'W3',leads:45,auto:40},
+  {week:'W4',leads:72,auto:68},{week:'W5',leads:61,auto:55},{week:'W6',leads:89,auto:82},
+  {week:'W7',leads:76,auto:71},{week:'W8',leads:95,auto:90}
+];
+const maxVal = Math.max(...data.map(d=>d.leads));
+const chart = document.getElementById('chart');
+const labels = document.getElementById('chartLabels');
+data.forEach(d => {
+  const h1 = (d.leads/maxVal)*100, h2 = (d.auto/maxVal)*100;
+  const grp = document.createElement('div');
+  grp.style.cssText='flex:1;display:flex;gap:2px;align-items:flex-end;height:100%;';
+  grp.innerHTML=`
+    <div class="chart-bar leads" style="height:${h1}%"><div class="chart-tooltip">${d.leads} leads</div></div>
+    <div class="chart-bar automated" style="height:${h2}%"><div class="chart-tooltip">${d.auto} auto</div></div>`;
+  chart.appendChild(grp);
+  const lbl=document.createElement('span');
+  lbl.style.cssText='flex:1;text-align:center;font-family:"JetBrains Mono",monospace;font-size:8px;color:var(--text2);';
+  lbl.textContent=d.week; labels.appendChild(lbl);
+});
+
+// Animate storage bars
+setTimeout(()=>{ document.querySelectorAll('.storage-fill').forEach(b=>{ const w=b.style.width; b.style.width='0'; setTimeout(()=>b.style.width=w,100); }); },200);
+
+// Counter animation
+function animateCount(el, target) {
+  let count=0; const step=Math.ceil(target/40);
+  const t=setInterval(()=>{ count=Math.min(count+step,target); el.textContent=count+(el.dataset.suffix||''); if(count>=target)clearInterval(t); },30);
+}
+
+function savePlatform(platform) {
+  const btn = event.currentTarget;
+  btn.textContent='VALIDATING...'; btn.style.color='var(--gold)';
+  setTimeout(()=>{ btn.textContent='✓ SAVED & CONNECTED'; btn.style.color='var(--green)';
+    setTimeout(()=>{ btn.textContent='SAVE & VALIDATE →'; btn.style.color='var(--cyan)'; },2000);
+  },1200);
+}
+</script>
+</body>
+</html>
