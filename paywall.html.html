@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT.OS — Upgrade Required</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;min-height:100%;overflow-x:hidden;}
+body{
+  background:#020408;
+  font-family:'Rajdhani',sans-serif;
+  color:#e8f4f8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:20px;
+  position:relative;
+}
+
+/* BG EFFECTS */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(180,0,0,0.18) 0%,transparent 55%),
+    radial-gradient(ellipse at 0% 100%,rgba(120,0,0,0.1) 0%,transparent 50%),
+    radial-gradient(ellipse at 100% 50%,rgba(100,0,0,0.08) 0%,transparent 50%);
+  animation:bgPulse 5s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{from{opacity:0.7;}to{opacity:1;}}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,0,0,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,0,0,0.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+/* SCAN LINE */
+.scanline{
+  position:fixed;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,51,85,0.5),transparent);
+  animation:scan 4s linear infinite;pointer-events:none;z-index:100;
+}
+@keyframes scan{from{top:-2px;}to{top:100vh;}}
+
+/* CARD */
+.card{
+  position:relative;z-index:10;
+  width:100%;max-width:560px;
+  background:linear-gradient(140deg,#0a0408,#120008,#0a0408);
+  border:1px solid rgba(255,51,85,0.25);
+  border-radius:18px;
+  padding:clamp(24px,5vw,48px) clamp(20px,5vw,42px);
+  text-align:center;
+  box-shadow:
+    0 0 60px rgba(180,0,0,0.18),
+    0 0 120px rgba(180,0,0,0.05),
+    inset 0 1px 0 rgba(255,51,85,0.1);
+  animation:cardIn 0.8s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:scale(0.92) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+
+/* TOP LINE */
+.card::before{
+  content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,51,85,0.5),transparent);
+}
+
+/* SHIELD */
+.shield-wrap{position:relative;display:inline-block;margin-bottom:24px;}
+.shield-glow{
+  position:absolute;inset:-24px;
+  background:radial-gradient(circle,rgba(255,51,85,0.15),transparent 65%);
+  animation:glowPulse 2.5s ease-in-out infinite alternate;
+}
+@keyframes glowPulse{from{transform:scale(0.85);opacity:0.5;}to{transform:scale(1.1);opacity:1;}}
+
+/* TITLE */
+.lock-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(20px,5vw,28px);
+  font-weight:900;letter-spacing:3px;
+  line-height:1.2;margin-bottom:8px;color:#fff;
+}
+.lock-title span{color:#ff3355;}
+.lock-sub{
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(9px,2vw,11px);
+  color:rgba(232,244,248,0.4);letter-spacing:2px;margin-bottom:28px;
+}
+
+/* COUNTDOWN */
+.countdown-box{
+  background:rgba(255,51,85,0.06);
+  border:1px solid rgba(255,51,85,0.14);
+  border-radius:10px;padding:16px;margin-bottom:20px;
+}
+.cd-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:rgba(255,51,85,0.6);letter-spacing:3px;margin-bottom:10px;
+}
+.cd-row{display:flex;align-items:center;justify-content:center;gap:12px;}
+.cd-block{text-align:center;}
+.cd-val{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(28px,7vw,40px);
+  font-weight:900;color:#ff3355;line-height:1;
+  text-shadow:0 0 20px rgba(255,51,85,0.4);
+}
+.cd-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(255,51,85,0.45);letter-spacing:2px;margin-top:3px;}
+.cd-sep{font-family:'Orbitron',monospace;font-size:26px;color:rgba(255,51,85,0.25);padding-bottom:14px;}
+
+/* TRIAL ROW */
+.trial-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.05);
+  border-radius:8px;padding:10px 14px;margin-bottom:20px;
+}
+.trial-row-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(232,244,248,0.35);letter-spacing:2px;}
+.trial-row-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ff3355;}
+
+/* PRICING */
+.pricing-box{
+  background:rgba(255,51,85,0.04);border:1px solid rgba(255,51,85,0.12);
+  border-radius:10px;padding:18px;margin-bottom:20px;
+}
+.pricing-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;color:rgba(232,244,248,0.5);margin-bottom:14px;}
+.tiers{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.tier{
+  background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.07);
+  border-radius:8px;padding:12px 14px;flex:1;min-width:130px;max-width:160px;
+  cursor:pointer;transition:all 0.2s;
+}
+.tier:hover,.tier.sel{
+  border-color:rgba(255,51,85,0.4);
+  background:rgba(255,51,85,0.08);
+  transform:translateY(-2px);
+}
+.tier-name{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;color:rgba(232,244,248,0.4);margin-bottom:5px;}
+.tier-price{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:#ff3355;}
+.tier-mo{font-size:10px;color:rgba(232,244,248,0.25);}
+.tier-feats{font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(232,244,248,0.28);margin-top:6px;line-height:1.7;text-align:left;}
+
+/* CTA */
+.cta-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:16px 22px;margin-bottom:10px;
+  background:linear-gradient(135deg,#aa0018,#ff3355,#aa0018);
+  background-size:200% 100%;background-position:0% 0%;
+  border:none;border-radius:10px;color:#fff;
+  font-family:'Orbitron',monospace;font-size:clamp(11px,3vw,14px);
+  font-weight:700;letter-spacing:2px;cursor:pointer;text-decoration:none;
+  transition:all 0.3s;
+  box-shadow:0 4px 24px rgba(255,51,85,0.28);
+}
+.cta-btn:hover{background-position:100% 0%;box-shadow:0 6px 32px rgba(255,51,85,0.45);transform:translateY(-1px);}
+.cta-arrow{font-size:18px;flex-shrink:0;}
+.cta-sub{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:rgba(232,244,248,0.28);letter-spacing:2px;margin-bottom:20px;
+}
+
+/* DATA SAFE */
+.data-safe{
+  background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.1);
+  border-radius:8px;padding:10px 14px;margin-bottom:20px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:rgba(0,255,136,0.6);letter-spacing:1px;line-height:1.7;
+}
+
+/* LANG */
+.lang-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+.lb{
+  background:none;border:1px solid rgba(255,255,255,0.08);
+  color:rgba(232,244,248,0.35);font-family:'JetBrains Mono',monospace;
+  font-size:9px;padding:4px 10px;border-radius:4px;cursor:pointer;
+  transition:all 0.2s;letter-spacing:1px;
+}
+.lb:hover,.lb.on{border-color:rgba(255,51,85,0.4);color:rgba(255,51,85,0.8);}
+
+/* SECURED */
+.secured{
+  margin-top:18px;font-family:'JetBrains Mono',monospace;
+  font-size:8px;color:rgba(232,244,248,0.12);letter-spacing:3px;
+}
+
+/* MOBILE */
+@media(max-width:480px){
+  .tiers{flex-direction:column;align-items:center;}
+  .tier{max-width:100%;width:100%;}
+  .cd-val{font-size:28px;}
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<div class="card">
+
+  <!-- SHIELD SVG -->
+  <div class="shield-wrap">
+    <div class="shield-glow"></div>
+    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+      <path d="M36 6L10 18V36C10 51 21 63.5 36 67.5C51 63.5 62 51 62 36V18L36 6Z"
+        fill="rgba(255,51,85,0.1)" stroke="#ff3355" stroke-width="1.5"/>
+      <path d="M36 16L18 25V36C18 47 25.5 56.5 36 60C46.5 56.5 54 47 54 36V25L36 16Z"
+        fill="none" stroke="rgba(255,51,85,0.35)" stroke-width="1"/>
+      <!-- Circuit lines -->
+      <line x1="28" y1="36" x2="44" y2="36" stroke="#ff3355" stroke-width="1.2" opacity="0.6"/>
+      <line x1="36" y1="28" x2="36" y2="44" stroke="#ff3355" stroke-width="1.2" opacity="0.6"/>
+      <circle cx="36" cy="36" r="3.5" fill="#ff3355" opacity="0.7"/>
+      <circle cx="28" cy="36" r="1.5" fill="#ff3355" opacity="0.4"/>
+      <circle cx="44" cy="36" r="1.5" fill="#ff3355" opacity="0.4"/>
+      <circle cx="36" cy="28" r="1.5" fill="#ff3355" opacity="0.4"/>
+      <circle cx="36" cy="44" r="1.5" fill="#ff3355" opacity="0.4"/>
+      <!-- Lock icon center -->
+      <rect x="32" y="34" width="8" height="7" rx="1" stroke="#ff3355" stroke-width="1" fill="rgba(255,51,85,0.2)"/>
+      <path d="M33 34V32C33 30.3 34.3 29 36 29C37.7 29 39 30.3 39 32V34" stroke="#ff3355" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <!-- TITLE -->
+  <div class="lock-title" id="lockTitle">ACCESS <span>LOCKED</span></div>
+  <div class="lock-sub" id="lockSub">// 10-DAY TRIAL EXPIRED — UPGRADE TO CONTINUE</div>
+
+  <!-- COUNTDOWN (time since expiry) -->
+  <div class="countdown-box">
+    <div class="cd-label" id="cdLabel">TRIAL EXPIRED</div>
+    <div class="cd-row">
+      <div class="cd-block"><div class="cd-val" id="cdD">00</div><div class="cd-lbl" id="cdDL">DAYS</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block"><div class="cd-val" id="cdH">00</div><div class="cd-lbl" id="cdHL">HOURS</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block"><div class="cd-val" id="cdM">00</div><div class="cd-lbl" id="cdML">MINS</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block"><div class="cd-val" id="cdS">00</div><div class="cd-lbl" id="cdSL">SECS</div></div>
+    </div>
+  </div>
+
+  <!-- TRIAL STATUS -->
+  <div class="trial-row">
+    <div class="trial-row-lbl" id="trialLbl">TRIAL DAYS REMAINING</div>
+    <div class="trial-row-val">0 / 10</div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="pricing-box">
+    <div class="pricing-title" id="pricingTitle">SELECT YOUR PLAN</div>
+    <div class="tiers">
+      <div class="tier sel" onclick="selectTier(this)">
+        <div class="tier-name">STARTER</div>
+        <div class="tier-price">$299</div>
+        <div class="tier-mo" id="mo1">/month</div>
+        <div class="tier-feats">5 clients max<br>Core workflows<br>Basic vault</div>
+      </div>
+      <div class="tier" onclick="selectTier(this)">
+        <div class="tier-name">PRO</div>
+        <div class="tier-price">$599</div>
+        <div class="tier-mo" id="mo2">/month</div>
+        <div class="tier-feats">25 clients<br>All platforms<br>Full vault + insights</div>
+      </div>
+      <div class="tier" onclick="selectTier(this)">
+        <div class="tier-name">ELITE</div>
+        <div class="tier-price">$999</div>
+        <div class="tier-mo" id="mo3">/month</div>
+        <div class="tier-feats">Unlimited clients<br>Custom workflows<br>White-label ready</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA BUTTON — CORRECT LINKEDIN LINK -->
+  <a
+    href="https://www.linkedin.com/in/abid-anwar-m-anwar-b4b2643a9"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="cta-btn"
+    id="ctaBtn"
+  >
+    <span id="ctaText">UNLOCK ACCESS VIA LINKEDIN</span>
+    <span class="cta-arrow">→</span>
+  </a>
+  <div class="cta-sub" id="ctaSub">MESSAGE ABID ANWAR ON LINKEDIN · MANUAL ACTIVATION · SECURE HANDSHAKE</div>
+
+  <!-- DATA SAFE NOTICE -->
+  <div class="data-safe" id="dataSafe">
+    ✓ YOUR DATA IS SAFE &amp; ENCRYPTED — Even after trial expiry, all your clients, leads, and workflows remain fully secured in your isolated partition. Upgrade anytime to restore full access. Nothing is deleted.
+  </div>
+
+  <!-- LANGUAGE BUTTONS -->
+  <div class="lang-row">
+    <button class="lb on" onclick="setLang('en',this)">EN</button>
+    <button class="lb" onclick="setLang('ur',this)">UR</button>
+    <button class="lb" onclick="setLang('ar',this)">AR</button>
+    <button class="lb" onclick="setLang('fr',this)">FR</button>
+    <button class="lb" onclick="setLang('de',this)">DE</button>
+    <button class="lb" onclick="setLang('es',this)">ES</button>
+    <button class="lb" onclick="setLang('zh',this)">ZH</button>
+  </div>
+
+  <div class="secured">FRAMEWORK SECURED BY ABID ANWAR · AGENT.OS v2.4 · ALL DATA ENCRYPTED</div>
+</div>
+
+<script>
+// ===== SUPABASE =====
+const SUPABASE_URL = 'sb_secret_MzJNh5toWkGlRnwQBf-NGw_Wt66EXsa';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzZ3pnamlkYml1d2dwcGp5dmRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDkxMzEsImV4cCI6MjA5NDQyNTEzMX0.5JvMPJjl5rc8eFCU3FTzMDrtB6B4sY923U19BJN6Dgo';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== SESSION GUARD =====
+// Verify trial from DB — can't be bypassed from frontend
+async function verifyTrial() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { window.location.href='index.html'; return; }
+  const { data } = await sb.from('agency_profiles').select('trial_days_remaining').eq('user_id',session.user.id).single();
+  // If somehow trial is still valid, redirect back to dashboard
+  if (data && data.trial_days_remaining > 0) {
+    window.location.href = 'dashboard.html';
+  }
+}
+verifyTrial();
+
+// ===== COUNTDOWN (since expiry) =====
+let secs = 0;
+function tick() {
+  secs++;
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  document.getElementById('cdD').textContent = String(d).padStart(2,'0');
+  document.getElementById('cdH').textContent = String(h).padStart(2,'0');
+  document.getElementById('cdM').textContent = String(m).padStart(2,'0');
+  document.getElementById('cdS').textContent = String(s).padStart(2,'0');
+}
+setInterval(tick, 1000);
+
+// ===== TIER SELECT =====
+function selectTier(el) {
+  document.querySelectorAll('.tier').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ===== TRANSLATIONS =====
+const T = {
+  en:{
+    title:'ACCESS <span style="color:#ff3355">LOCKED</span>',
+    sub:'// 10-DAY TRIAL EXPIRED — UPGRADE TO CONTINUE',
+    cdLabel:'TRIAL EXPIRED',
+    dL:'DAYS',hL:'HOURS',mL:'MINS',sL:'SECS',
+    trialLbl:'TRIAL DAYS REMAINING',
+    pricingTitle:'SELECT YOUR PLAN',
+    mo:'/month',
+    ctaText:'UNLOCK ACCESS VIA LINKEDIN',
+    ctaSub:'MESSAGE ABID ANWAR ON LINKEDIN · MANUAL ACTIVATION · SECURE HANDSHAKE',
+    dataSafe:'✓ YOUR DATA IS SAFE & ENCRYPTED — Even after trial expiry, all your clients, leads, and workflows remain fully secured. Upgrade anytime to restore access. Nothing is deleted.'
+  },
+  ur:{
+    title:'رسائی <span style="color:#ff3355">بند</span>',
+    sub:'// 10 روزہ آزمائش ختم — اپ گریڈ ضروری ہے',
+    cdLabel:'ٹرائل ختم ہو گیا',
+    dL:'دن',hL:'گھنٹے',mL:'منٹ',sL:'سیکنڈ',
+    trialLbl:'باقی ٹرائل دن',
+    pricingTitle:'اپنا پلان چنیں',
+    mo:'/ماہ',
+    ctaText:'لنکڈان پر رسائی کھولیں',
+    ctaSub:'ابد انور کو لنکڈان پر میسج کریں · دستی ایکٹیویشن',
+    dataSafe:'✓ آپ کا ڈیٹا محفوظ ہے — ٹرائل ختم ہونے کے بعد بھی تمام ڈیٹا انکرپٹڈ اور محفوظ رہتا ہے۔ کبھی بھی اپ گریڈ کریں۔'
+  },
+  ar:{
+    title:'الوصول <span style="color:#ff3355">مقفل</span>',
+    sub:'// انتهت فترة الـ 10 أيام — الترقية مطلوبة',
+    cdLabel:'انتهت التجربة',
+    dL:'أيام',hL:'ساعات',mL:'دقائق',sL:'ثواني',
+    trialLbl:'أيام التجربة المتبقية',
+    pricingTitle:'اختر خطتك',
+    mo:'/شهر',
+    ctaText:'افتح الوصول عبر لينكد إن',
+    ctaSub:'راسل عبد أنور على لينكد إن · تفعيل يدوي',
+    dataSafe:'✓ بياناتك آمنة ومشفرة — حتى بعد انتهاء التجربة، جميع بياناتك محمية. يمكنك الترقية في أي وقت.'
+  },
+  fr:{
+    title:'ACCÈS <span style="color:#ff3355">VERROUILLÉ</span>',
+    sub:'// PÉRIODE D\'ESSAI EXPIRÉE — MISE À NIVEAU REQUISE',
+    cdLabel:'ESSAI EXPIRÉ',
+    dL:'JOURS',hL:'HEURES',mL:'MINS',sL:'SECS',
+    trialLbl:'JOURS D\'ESSAI RESTANTS',
+    pricingTitle:'CHOISISSEZ VOTRE PLAN',
+    mo:'/mois',
+    ctaText:'DÉBLOQUER L\'ACCÈS VIA LINKEDIN',
+    ctaSub:'CONTACTEZ ABID ANWAR SUR LINKEDIN · ACTIVATION MANUELLE',
+    dataSafe:'✓ VOS DONNÉES SONT SÉCURISÉES — Même après expiration, toutes vos données restent chiffrées. Mettez à niveau à tout moment.'
+  },
+  de:{
+    title:'ZUGANG <span style="color:#ff3355">GESPERRT</span>',
+    sub:'// TESTZEITRAUM ABGELAUFEN — UPGRADE ERFORDERLICH',
+    cdLabel:'TEST ABGELAUFEN',
+    dL:'TAGE',hL:'STUNDEN',mL:'MIN',sL:'SEK',
+    trialLbl:'VERBLEIBENDE TESTTAGE',
+    pricingTitle:'PLAN WÄHLEN',
+    mo:'/Monat',
+    ctaText:'ZUGANG VIA LINKEDIN FREISCHALTEN',
+    ctaSub:'NACHRICHT AN ABID ANWAR AUF LINKEDIN · MANUELLE AKTIVIERUNG',
+    dataSafe:'✓ IHRE DATEN SIND SICHER — Auch nach Ablauf des Tests bleiben alle Ihre Daten verschlüsselt. Jederzeit upgraden.'
+  },
+  es:{
+    title:'ACCESO <span style="color:#ff3355">BLOQUEADO</span>',
+    sub:'// PERÍODO DE PRUEBA EXPIRADO — ACTUALIZACIÓN REQUERIDA',
+    cdLabel:'PRUEBA EXPIRADA',
+    dL:'DÍAS',hL:'HORAS',mL:'MINS',sL:'SEGS',
+    trialLbl:'DÍAS DE PRUEBA RESTANTES',
+    pricingTitle:'ELIGE TU PLAN',
+    mo:'/mes',
+    ctaText:'DESBLOQUEAR ACCESO VIA LINKEDIN',
+    ctaSub:'MENSAJE A ABID ANWAR EN LINKEDIN · ACTIVACIÓN MANUAL',
+    dataSafe:'✓ TUS DATOS ESTÁN SEGUROS — Incluso después de la expiración, todos tus datos permanecen cifrados. Actualiza cuando quieras.'
+  },
+  zh:{
+    title:'访问<span style="color:#ff3355">已锁定</span>',
+    sub:'// 10天试用期已到期 — 需要升级',
+    cdLabel:'试用已到期',
+    dL:'天',hL:'小时',mL:'分钟',sL:'秒',
+    trialLbl:'剩余试用天数',
+    pricingTitle:'选择您的计划',
+    mo:'/月',
+    ctaText:'通过 LINKEDIN 解锁访问',
+    ctaSub:'在 LINKEDIN 联系 ABID ANWAR · 手动激活',
+    dataSafe:'✓ 您的数据安全且加密 — 即使试用期结束，所有数据仍完全加密保存。随时升级即可恢复访问。'
+  }
+};
+
+function setLang(lang, btn) {
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  const t = T[lang]||T.en;
+  document.getElementById('lockTitle').innerHTML = t.title;
+  document.getElementById('lockSub').textContent = t.sub;
+  document.getElementById('cdLabel').textContent = t.cdLabel;
+  document.getElementById('cdDL').textContent = t.dL;
+  document.getElementById('cdHL').textContent = t.hL;
+  document.getElementById('cdML').textContent = t.mL;
+  document.getElementById('cdSL').textContent = t.sL;
+  document.getElementById('trialLbl').textContent = t.trialLbl;
+  document.getElementById('pricingTitle').textContent = t.pricingTitle;
+  document.getElementById('mo1').textContent = t.mo;
+  document.getElementById('mo2').textContent = t.mo;
+  document.getElementById('mo3').textContent = t.mo;
+  document.getElementById('ctaText').textContent = t.ctaText;
+  document.getElementById('ctaSub').textContent = t.ctaSub;
+  document.getElementById('dataSafe').textContent = t.dataSafe;
+  document.documentElement.setAttribute('dir',(lang==='ar'||lang==='ur')?'rtl':'ltr');
+  document.documentElement.lang = lang;
+}
+
+// Auto-detect browser language
+const bl = navigator.language.slice(0,2);
+const blBtn = document.querySelector(`.lb[onclick*="'${bl}'"]`);
+if (T[bl] && blBtn) setLang(bl, blBtn);
+</script>
+</body>
+</html>

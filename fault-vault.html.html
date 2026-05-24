@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT.OS — Fault Vault</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#020810;--bg2:#050f1c;--card:#080e1a;--card2:#0d1626;--cyan:#00d4ff;--green:#00ff88;--orange:#ff6b35;--red:#ff3355;--gold:#ffd700;--text:#e8f4f8;--text2:#6a8fa8;--dim:#1a3a4e;--border:#0d2235;--grid:rgba(0,212,255,0.035);}
+[data-theme="light"]{--bg:#f0f4f8;--bg2:#e2eaf2;--card:#fff;--card2:#f7fafc;--text:#0a1628;--text2:#4a6080;--dim:#c0cfe0;--border:#d0dcea;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;padding:24px;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;}
+
+.page-header{margin-bottom:24px;position:relative;z-index:1;}
+.page-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;letter-spacing:2px;}
+.page-title span{color:var(--red);}
+.page-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:2px;margin-top:4px;}
+
+/* CIRCUIT BREAKER */
+.circuit-breaker{position:relative;z-index:1;margin-bottom:24px;}
+.cb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cb-title{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;font-weight:700;}
+.cb-status{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;}
+.cb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.cb-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;transition:all 0.3s;}
+.cb-card.error{border-color:rgba(255,51,85,0.4);animation:errorPulse 2s infinite;}
+@keyframes errorPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,51,85,0.3);}50%{box-shadow:0 0 0 8px rgba(255,51,85,0);}}
+.cb-card.warning{border-color:rgba(255,107,53,0.4);}
+.cb-card.healthy{border-color:rgba(0,255,136,0.2);}
+.cb-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cb-platform{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:1px;}
+.cb-state{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;}
+.cb-state.error{background:rgba(255,51,85,0.15);color:var(--red);}
+.cb-state.warning{background:rgba(255,107,53,0.15);color:var(--orange);}
+.cb-state.healthy{background:rgba(0,255,136,0.1);color:var(--green);}
+.cb-code{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:8px;}
+.cb-msg{font-size:11px;color:var(--text2);margin-bottom:10px;}
+.cb-meta{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1px;}
+.cb-flash{position:absolute;top:0;left:0;right:0;height:3px;}
+.cb-flash.error{background:var(--red);animation:flashBar 1.5s infinite;}
+.cb-flash.warning{background:var(--orange);}
+.cb-flash.healthy{background:var(--green);}
+@keyframes flashBar{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* DEAD LETTER TABLE */
+.vault-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;z-index:1;margin-bottom:24px;}
+.vault-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.vault-panel-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;font-weight:700;}
+.batch-btn{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.batch-btn:hover{background:rgba(0,212,255,0.15);}
+.dead-letter-table{width:100%;}
+.dl-row{display:grid;grid-template-columns:1fr 1fr 80px 100px 80px 120px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.2s;}
+.dl-row:hover{background:rgba(255,51,85,0.03);}
+.dl-row.header{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:2px;background:rgba(0,0,0,0.2);}
+.dl-row.header:hover{background:rgba(0,0,0,0.2);}
+.dl-client{font-size:12px;font-weight:600;}
+.dl-client-industry{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);margin-top:2px;}
+.dl-payload{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dl-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);}
+.error-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:1px;}
+.error-tag.e500{background:rgba(255,51,85,0.12);color:var(--red);border:1px solid rgba(255,51,85,0.2);}
+.error-tag.e408{background:rgba(255,107,53,0.12);color:var(--orange);border:1px solid rgba(255,107,53,0.2);}
+.error-tag.e401{background:rgba(255,215,0,0.12);color:var(--gold);border:1px solid rgba(255,215,0,0.2);}
+.resync-btn{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:5px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.resync-btn:hover{background:rgba(0,255,136,0.15);box-shadow:0 0 10px rgba(0,255,136,0.15);}
+.resync-btn.syncing{color:var(--gold);border-color:rgba(255,215,0,0.3);animation:spin 1s linear infinite;}
+.resync-btn.done{color:var(--green);border-color:rgba(0,255,136,0.4);}
+@keyframes spin{0%{opacity:1;}50%{opacity:0.5;}100%{opacity:1;}}
+
+/* LOADING ANIMATION */
+.loading-row{display:flex;align-items:center;gap:8px;padding:20px 18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);}
+.loading-dots span{animation:blink 1.2s infinite;display:inline-block;}
+.loading-dots span:nth-child(2){animation-delay:0.2s;}
+.loading-dots span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,100%{opacity:0.2;}50%{opacity:1;}}
+
+/* SELECT ALL */
+.checkbox{width:14px;height:14px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:transparent;accent-color:var(--cyan);}
+
+@media(max-width:900px){.cb-grid{grid-template-columns:1fr;}.dl-row{grid-template-columns:1fr 1fr;gap:6px;}.dl-row>*:nth-child(n+3){display:none;}.dl-row .resync-btn{display:block!important;}}
+@media(max-width:480px){.vault-panel-header{flex-direction:column;gap:8px;align-items:flex-start;}}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">FAULT <span>VAULT</span></div>
+  <div class="page-sub">// LOSS PREVENTION · DEAD LETTER RECOVERY · CIRCUIT BREAKER STATUS</div>
+</div>
+
+<!-- CIRCUIT BREAKER -->
+<div class="circuit-breaker">
+  <div class="cb-header">
+    <div class="cb-title">CIRCUIT <span style="color:var(--cyan)">BREAKER</span> STATUS</div>
+    <div class="cb-status" style="color:var(--text2)">LAST CHECK: <span style="color:var(--cyan)">14s AGO</span></div>
+  </div>
+  <div class="cb-grid">
+    <div class="cb-card error">
+      <div class="cb-flash error"></div>
+      <div class="cb-top">
+        <div class="cb-platform" style="color:var(--orange)">n8n</div>
+        <div class="cb-state error">● ERROR</div>
+      </div>
+      <div class="cb-code">STATUS 500 · Internal Server Error</div>
+      <div class="cb-msg">Webhook execution failed — Al-Rashid Realty lead pipeline halted</div>
+      <div class="cb-meta">FAILED AT: 20:14:32 UTC · RETRIES: 3/3</div>
+    </div>
+    <div class="cb-card warning">
+      <div class="cb-flash warning"></div>
+      <div class="cb-top">
+        <div class="cb-platform" style="color:#7b61ff">MAKE</div>
+        <div class="cb-state warning">◎ WARNING</div>
+      </div>
+      <div class="cb-code">STATUS 408 · Request Timeout</div>
+      <div class="cb-msg">Scenario response exceeded 30s threshold — degraded performance</div>
+      <div class="cb-meta">DEGRADED SINCE: 19:52:10 UTC · ATTEMPTS: 1</div>
+    </div>
+    <div class="cb-card healthy">
+      <div class="cb-flash healthy"></div>
+      <div class="cb-top">
+        <div class="cb-platform" style="color:#ff4a00">ZAPIER</div>
+        <div class="cb-state healthy">✓ HEALTHY</div>
+      </div>
+      <div class="cb-code">STATUS 200 · All Systems OK</div>
+      <div class="cb-msg">All 15 Zaps running within normal parameters</div>
+      <div class="cb-meta">LAST SUCCESS: 20:18:01 UTC · UPTIME: 100%</div>
+    </div>
+  </div>
+</div>
+
+<!-- DEAD LETTER VAULT -->
+<div class="vault-panel">
+  <div class="vault-panel-header">
+    <div class="vault-panel-title">DEAD LETTER <span style="color:var(--red)">QUEUE</span> — <span style="color:var(--cyan)" id="dlCount">4</span> HELD LEADS</div>
+    <button class="batch-btn" onclick="resyncAll()">⟳ RE-SYNC ALL →</button>
+  </div>
+
+  <div id="tableWrap">
+    <div class="loading-row">
+      <span>LOADING VAULT</span>
+      <div class="loading-dots"><span>●</span><span>●</span><span>●</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const deadLetters = [
+  { id:'DL-001', client:'Al-Rashid Realty', industry:'REAL ESTATE', payload:'{"lead":"Mohammed Al-Farsi","phone":"+971-50-xxx","intent":"3BR villa"}', time:'4h 32m', error:'e500', code:'500', platform:'n8n', status:'held' },
+  { id:'DL-002', client:'Noor Senior Care', industry:'SENIOR LIVING', payload:'{"family":"Johnson","inquiry":"2-bed suite","urgency":"high"}', time:'2h 15m', error:'e500', code:'500', platform:'n8n', status:'held' },
+  { id:'DL-003', client:'Gulf Properties LLC', industry:'REAL ESTATE', payload:'{"lead":"Sarah Ahmed","budget":"AED 2M","timeline":"Q3"}', time:'1h 45m', error:'e408', code:'408', platform:'Make', status:'held' },
+  { id:'DL-004', client:'Horizon Medical', industry:'HEALTHCARE', payload:'{"patient":"anonymous","service":"consultation","channel":"web"}', time:'22m', error:'e401', code:'401', platform:'Make', status:'held' },
+];
+
+function buildTable() {
+  const wrap = document.getElementById('tableWrap');
+  let html = `<div class="dead-letter-table">
+    <div class="dl-row header">
+      <div>CLIENT / INDUSTRY</div>
+      <div>PAYLOAD PREVIEW</div>
+      <div>HELD FOR</div>
+      <div>ERROR</div>
+      <div>PLATFORM</div>
+      <div>ACTION</div>
+    </div>`;
+  deadLetters.forEach((d,i) => {
+    html += `<div class="dl-row" id="row-${i}">
+      <div><div class="dl-client">${d.client}</div><div class="dl-client-industry">${d.industry}</div></div>
+      <div class="dl-payload" title="${d.payload}">${d.payload}</div>
+      <div class="dl-time">${d.time}</div>
+      <div><span class="error-tag ${d.error}">${d.code}</span></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text2);">${d.platform}</div>
+      <button class="resync-btn" id="btn-${i}" onclick="resyncLead(${i})">⟳ RE-SYNC</button>
+    </div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+function resyncLead(idx) {
+  const btn = document.getElementById(`btn-${idx}`);
+  btn.classList.add('syncing');
+  btn.textContent = '⟳ SYNCING...';
+  setTimeout(() => {
+    btn.classList.remove('syncing');
+    btn.classList.add('done');
+    btn.textContent = '✓ PUSHED';
+    btn.disabled = true;
+    document.getElementById(`row-${idx}`).style.opacity = '0.4';
+    // Update count
+    const count = document.querySelectorAll('.resync-btn:not(.done)').length;
+    document.getElementById('dlCount').textContent = count;
+  }, 1800);
+}
+
+function resyncAll() {
+  const btn = event.currentTarget;
+  btn.textContent = '⟳ SYNCING ALL...';
+  btn.style.color = 'var(--gold)';
+  [0,1,2,3].forEach((i,delay) => {
+    setTimeout(() => resyncLead(i), delay * 600);
+  });
+  setTimeout(() => {
+    btn.textContent = '✓ ALL SYNCED';
+    btn.style.color = 'var(--green)';
+  }, 4000);
+}
+
+// Load with animation
+setTimeout(buildTable, 800);
+</script>
+</body>
+</html>
