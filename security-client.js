@@ -5,7 +5,7 @@
 // <script src="security-client.js"></script>
 // ============================================
 
-const SUPABASE_URL = 'sb_secret_MzJNh5toWkGlRnwQBf-NGw_Wt66EXsa';
+const SUPABASE_URL = 'sb_secret_6ONOHwr3dVJIvugxsDvA0g__j94LphJ';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzZ3pnamlkYml1d2dwcGp5dmRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDkxMzEsImV4cCI6MjA5NDQyNTEzMX0.5JvMPJjl5rc8eFCU3FTzMDrtB6B4sY923U19BJN6Dgo';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/verify-trial`;
 const LINKEDIN_URL = 'https://www.linkedin.com/in/abid-anwar-m-anwar-b4b2643a9';
