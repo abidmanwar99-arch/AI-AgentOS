@@ -944,3 +944,43 @@ function showFbMsg(type, text) {
 </script>
 </body>
 </html>
+// ===== SIGN UP (BYPASS INTERFERENCE - FIXED) =====
+async function signUp() {
+  const name = document.getElementById('suName').value.trim();
+  const email = document.getElementById('suEmail').value.trim();
+  const pass = document.getElementById('suPass').value;
+  const msg = document.getElementById('suMsg');
+  
+  if (!name || !email || !pass) { showMsg(msg, 'error', 'Please fill all fields'); return; }
+  if (pass.length < 8) { showMsg(msg, 'error', 'Password must be 8+ characters'); return; }
+  
+  // FIXED: Direct DOM target instead of unstable event.currentTarget
+  const btn = document.getElementById('suBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'CREATING ACCOUNT...'; }
+  
+  // Directly sign up with user metadata to bypass database RLS lockout
+  const { data, error } = await sb.auth.signUp({ 
+    email, 
+    password: pass, 
+    options: { 
+      data: { 
+        full_name: name
+      } 
+    } 
+  });
+  
+  if (error) { 
+    if (btn) { btn.disabled = false; btn.textContent = 'START FREE TRIAL →'; }
+    showMsg(msg, 'error', error.message); 
+    return; 
+  }
+  
+  showMsg(msg, 'success', 'Account created successfully! Auto-logging in...');
+  
+  // Instantly establish secure session token
+  await sb.auth.signInWithPassword({ email, password: pass });
+  
+  setTimeout(() => {
+    window.location.href = 'dashboard.html';
+  }, 1200);
+}
